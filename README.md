@@ -388,6 +388,6 @@ The plugin will automatically be added to the catalog with the name
 method as a plugin:
 
 ```sh
-$ vault auth enable -plugin-name="vault-plugin-secrets-ibmcloud" -path="ibmcloud" plugin
+$ vault secrets enable -plugin-name="vault-plugin-secrets-ibmcloud" -path="ibmcloud" plugin
 Success! Enabled vault-plugin-secrets-ibmcloud auth method at: ibmcloud/
 ```
