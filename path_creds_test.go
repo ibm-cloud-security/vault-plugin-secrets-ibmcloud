@@ -18,8 +18,8 @@ func TestStaticServiceID(t *testing.T) {
 
 	// Set up
 	callCount := map[string]int{
-		"CheckServiceIDAccount": 7,
-		"CreateAPIKey":          3,
+		"CheckServiceIDAccount": 9,
+		"CreateAPIKey":          4,
 	}
 
 	b, s := getMockedBackendStaticServiceID(t, ctrl, callCount)
@@ -46,6 +46,13 @@ func TestStaticServiceID(t *testing.T) {
 	// Test failure to get a credential
 	testRoleUpdate(t, b, s, map[string]interface{}{nameField: "testRole", serviceIDField: "keyFailureGetUser"})
 	testFailedGet(t, b, s)
+
+	// Test failure to renew when the role has been deleted
+	testRoleUpdate(t, b, s, map[string]interface{}{nameField: "testRole", serviceIDField: "serviceID1"})
+	sec = testSuccessfulGet(t, b, s, map[string]string{apiKeyID: "apiKeyID"}, 1000, 2000)
+	testRoleDelete(t, b, s, "testRole")
+	testRenewFailureWithDeletedRole(t, b, s, sec)
+
 }
 
 func TestDynamicServiceID(t *testing.T) {
@@ -54,11 +61,11 @@ func TestDynamicServiceID(t *testing.T) {
 
 	// Set up
 	callCount := map[string]int{
-		"CreateServiceID":           3,
-		"CreateAPIKey":              2,
+		"CreateServiceID":           4,
+		"CreateAPIKey":              3,
 		"DeleteServiceID":           1,
-		"VerifyAccessGroupExists":   15,
-		"AddServiceIDToAccessGroup": 11,
+		"VerifyAccessGroupExists":   16,
+		"AddServiceIDToAccessGroup": 12,
 	}
 
 	b, s := getMockedBackendDynamicServiceID(t, ctrl, callCount)
@@ -88,6 +95,14 @@ func TestDynamicServiceID(t *testing.T) {
 	accessGroups = append(accessGroups, "groupToTriggerFailure")
 	testRoleUpdate(t, b, s, map[string]interface{}{nameField: "testRole", accessGroupIDsField: accessGroups})
 	testFailedGet(t, b, s)
+
+	// Test failure to renew when the role has been deleted
+	accessGroups = []string{"a"}
+	testRoleUpdate(t, b, s, map[string]interface{}{nameField: "testRole", accessGroupIDsField: accessGroups})
+	sec = testSuccessfulGet(t, b, s, map[string]string{serviceIDField: "createdServiceID"}, 1000, 2000)
+	testRoleDelete(t, b, s, "testRole")
+	testRenewFailureWithDeletedRole(t, b, s, sec)
+
 }
 
 /*
@@ -202,6 +217,26 @@ func testRenewFailureWithChangedBindings(t *testing.T, b *ibmCloudSecretBackend,
 		t.Fatal(err)
 	}
 	expectedMsg := "access group or service ID bindings were updated since secret was generated, cannot renew"
+	if resp == nil {
+		t.Fatalf("expected an error response on renew but did not receive one")
+	} else if !strings.Contains(resp.Error().Error(), expectedMsg) {
+		t.Fatalf("expected message \"%s\" to be in error: %v", expectedMsg, resp.Error())
+	}
+}
+
+func testRenewFailureWithDeletedRole(t *testing.T, b *ibmCloudSecretBackend, s logical.Storage, sec *logical.Secret) {
+	t.Helper()
+	sec.IssueTime = time.Now()
+	sec.Increment = time.Hour
+	resp, err := b.HandleRequest(context.Background(), &logical.Request{
+		Operation: logical.RenewOperation,
+		Secret:    sec,
+		Storage:   s,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	expectedMsg := "could not find role 'testRole' for secret"
 	if resp == nil {
 		t.Fatalf("expected an error response on renew but did not receive one")
 	} else if !strings.Contains(resp.Error().Error(), expectedMsg) {

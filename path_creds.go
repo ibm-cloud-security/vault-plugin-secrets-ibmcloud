@@ -63,28 +63,7 @@ func (b *ibmCloudSecretBackend) secretKeyRenew(ctx context.Context, req *logical
 		return nil, fmt.Errorf("invalid secret, internal data is missing role name")
 	}
 	role, err := getRole(ctx, req.Storage, roleName.(string))
-	if err != nil {
-		return logical.ErrorResponse(fmt.Sprintf("could not find role '%v' for secret", roleName)), nil
-	}
-	resp, err := b.verifySecretServiceKeyExists(ctx, req, role)
-
-	if resp == nil {
-		resp = &logical.Response{}
-	}
-	resp.Secret = req.Secret
-	resp.Secret.TTL = role.TTL
-	resp.Secret.MaxTTL = role.MaxTTL
-
-	return resp, nil
-}
-
-func (b *ibmCloudSecretBackend) verifySecretServiceKeyExists(ctx context.Context, req *logical.Request, role *ibmCloudRole) (*logical.Response, error) {
-	roleName, ok := req.Secret.InternalData[roleNameField]
-	if !ok {
-		return nil, fmt.Errorf("invalid secret, internal data is missing role name")
-	}
-	role, err := getRole(ctx, req.Storage, roleName.(string))
-	if err != nil {
+	if err != nil || role == nil {
 		return logical.ErrorResponse(fmt.Sprintf("could not find role '%v' for secret", roleName)), nil
 	}
 
@@ -95,7 +74,13 @@ func (b *ibmCloudSecretBackend) verifySecretServiceKeyExists(ctx context.Context
 	if role.BindingHash != bindingSum.(string) {
 		return logical.ErrorResponse(fmt.Sprintf("role '%v' access group or service ID bindings were updated since secret was generated, cannot renew", roleName)), nil
 	}
-	return nil, nil
+
+	resp := &logical.Response{}
+	resp.Secret = req.Secret
+	resp.Secret.TTL = role.TTL
+	resp.Secret.MaxTTL = role.MaxTTL
+
+	return resp, nil
 }
 
 func (b *ibmCloudSecretBackend) secretKeyRevoke(ctx context.Context, req *logical.Request, d *framework.FieldData) (*logical.Response, error) {
