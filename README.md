@@ -43,14 +43,14 @@ the plugin executable.
 
     To configure a role that uses an existing service ID:
     ```shell script
-   $ vault write ibmcloud/role/myRole service_id=ServiceId-123456dbd-de02-4435-86ce-123456789abc
-   Success! Data written to: ibmcloud/role/myRole
+   $ vault write ibmcloud/roles/myRole service_id=ServiceId-123456dbd-de02-4435-86ce-123456789abc
+   Success! Data written to: ibmcloud/roles/myRole
     ```
    
    To configure a role that uses existing access groups:
    ```shell script
-      $ vault write ibmcloud/role/myRole access_group_ids=AccessGroupId-43f12338-fc2c-41cd-b4f9-14eff0cbeb47,AccessGroupId-43f12111-fc2c-41cd-b4f9-14eff0cbeb21
-      Success! Data written to: ibmcloud/role/myRole
+      $ vault write ibmcloud/roles/myRole access_group_ids=AccessGroupId-43f12338-fc2c-41cd-b4f9-14eff0cbeb47,AccessGroupId-43f12111-fc2c-41cd-b4f9-14eff0cbeb21
+      Success! Data written to: ibmcloud/roles/myRole
    ```
    **There is a limit of 10 access groups per role.**
 
@@ -184,7 +184,7 @@ existing access groups.
 
 | Method     | Path                                             |
 |----------- |--------------------------------------------------|
-| `POST`     |  `/ibmcloud/role/:name`                          |
+| `POST`     |  `/ibmcloud/roles/:name`                          |
 
 
 ### Parameters
@@ -223,14 +223,14 @@ $ curl \
     --header "X-Vault-Token: ..." \
     --request POST \
     --data @payload.json \
-    https://127.0.0.1:8200/v1/ibmcloud/role/dev-role
+    https://127.0.0.1:8200/v1/ibmcloud/roles/dev-role
 ```
 ## Read Role
 Returns the previously registered role configuration.
 
 | Method     | Path                                             |
 |----------- |--------------------------------------------------|
-| `GET`      |  `/ibmcloud/role/:name`                          |
+| `GET`      |  `/ibmcloud/roles/:name`                          |
  
 ### Parameters
 
@@ -241,7 +241,7 @@ Returns the previously registered role configuration.
 ```shell script
 $ curl \
     --header "X-Vault-Token: ..." \
-    https://127.0.0.1:8200/v1/ibmcloud/role/dev-role
+    https://127.0.0.1:8200/v1/ibmcloud/roles/dev-role
 ```
 
 ### Sample Response
@@ -266,14 +266,14 @@ Lists all the roles that are registered with the plugin.
 
 | Method     | Path                                             |
 |----------- |--------------------------------------------------|
-| `LIST`     |  `/ibmcloud/role`                                |
+| `LIST`     |  `/ibmcloud/roles`                                |
  
 ### Sample Request
  ```shell script
 curl \
     --header "X-Vault-Token: ..." \
     --request LIST \
-    https://127.0.0.1:8200/v1/ibmcloud/role
+    https://127.0.0.1:8200/v1/ibmcloud/roles
 ```
 
 ### Sample Response
@@ -293,7 +293,7 @@ Deletes the previously registered role.
 
 | Method     | Path                                             |
 |----------- |--------------------------------------------------|
-| `DELETE`   |  `/ibmcloud/role/:name`                          |
+| `DELETE`   |  `/ibmcloud/roles/:name`                          |
  
 ### Parameters
 * `name (string: <required>)` - Name of the role.
@@ -303,7 +303,7 @@ Deletes the previously registered role.
  curl \
     --header "X-Vault-Token: ..." \
     --request DELETE \
-    https://127.0.0.1:8200/v1/ibmcloud/role/dev-role
+    https://127.0.0.1:8200/v1/ibmcloud/roles/dev-role
 ```
 
 ## Generate Secret (API key)

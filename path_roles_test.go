@@ -254,7 +254,7 @@ func testRoleCreate(tb testing.TB, b logical.Backend, s logical.Storage, d map[s
 
 	resp, err := b.HandleRequest(context.Background(), &logical.Request{
 		Operation: logical.CreateOperation,
-		Path:      fmt.Sprintf("role/%s", d[nameField]),
+		Path:      fmt.Sprintf("roles/%s", d[nameField]),
 		Data:      d,
 		Storage:   s,
 	})
@@ -271,7 +271,7 @@ func testRoleUpdate(tb testing.TB, b logical.Backend, s logical.Storage, d map[s
 
 	resp, err := b.HandleRequest(context.Background(), &logical.Request{
 		Operation: logical.UpdateOperation,
-		Path:      fmt.Sprintf("role/%s", d[nameField]),
+		Path:      fmt.Sprintf("roles/%s", d[nameField]),
 		Data:      d,
 		Storage:   s,
 	})
@@ -288,7 +288,7 @@ func testRoleDelete(tb testing.TB, b logical.Backend, s logical.Storage, roleNam
 
 	resp, err := b.HandleRequest(context.Background(), &logical.Request{
 		Operation: logical.DeleteOperation,
-		Path:      fmt.Sprintf("role/%s", roleName),
+		Path:      fmt.Sprintf("roles/%s", roleName),
 		Storage:   s,
 	})
 
@@ -305,7 +305,7 @@ func testRoleDelete(tb testing.TB, b logical.Backend, s logical.Storage, roleNam
 
 	resp, err = b.HandleRequest(context.Background(), &logical.Request{
 		Operation: logical.ReadOperation,
-		Path:      fmt.Sprintf("role/%s", roleName),
+		Path:      fmt.Sprintf("roles/%s", roleName),
 		Storage:   s,
 	})
 	if resp != nil || err != nil {
@@ -318,7 +318,7 @@ func testRoleCreateError(tb testing.TB, b logical.Backend, s logical.Storage, d 
 
 	resp, err := b.HandleRequest(context.Background(), &logical.Request{
 		Operation: logical.CreateOperation,
-		Path:      fmt.Sprintf("role/%s", d[nameField]),
+		Path:      fmt.Sprintf("roles/%s", d[nameField]),
 		Data:      d,
 		Storage:   s,
 	})
@@ -341,7 +341,7 @@ func testRoleRead(tb testing.TB, b logical.Backend, s logical.Storage, roleName 
 
 	resp, err := b.HandleRequest(context.Background(), &logical.Request{
 		Operation: logical.ReadOperation,
-		Path:      fmt.Sprintf("role/%s", roleName),
+		Path:      fmt.Sprintf("roles/%s", roleName),
 		Storage:   s,
 	})
 	if err != nil {

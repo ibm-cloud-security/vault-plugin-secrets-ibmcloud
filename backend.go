@@ -46,7 +46,7 @@ func backend(c *logical.BackendConfig) *ibmCloudSecretBackend {
 				pathConfig(b),
 				pathSecretServiceIDKey(b),
 			},
-			pathsRole(b),
+			pathsRoles(b),
 		),
 		Secrets: []*framework.Secret{
 			secretServiceIDKey(b),

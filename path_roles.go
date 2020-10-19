@@ -14,11 +14,11 @@ import (
 	"time"
 )
 
-// pathsRole returns the path configurations for the CRUD operations on roles
-func pathsRole(b *ibmCloudSecretBackend) []*framework.Path {
+// pathsRoles returns the path configurations for the CRUD operations on roles
+func pathsRoles(b *ibmCloudSecretBackend) []*framework.Path {
 	p := []*framework.Path{
 		{
-			Pattern: "role/?",
+			Pattern: "roles/?",
 			Operations: map[logical.Operation]framework.OperationHandler{
 				logical.ListOperation: &framework.PathOperation{
 					Callback: b.pathRoleList,
@@ -28,7 +28,7 @@ func pathsRole(b *ibmCloudSecretBackend) []*framework.Path {
 			HelpDescription: strings.TrimSpace(roleListHelpDesc),
 		},
 		{
-			Pattern: "role/" + framework.GenericNameRegex(nameField),
+			Pattern: "roles/" + framework.GenericNameRegex(nameField),
 			Fields: map[string]*framework.FieldSchema{
 				nameField: {
 					Type:        framework.TypeString,
