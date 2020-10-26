@@ -92,17 +92,38 @@ func (b *ibmCloudSecretBackend) secretKeyRevoke(ctx context.Context, req *logica
 
 	serviceIDRaw, dynamicIDSecret := req.Secret.InternalData[serviceIDField]
 	apiKeyIDRaw, staticIDSecret := req.Secret.InternalData[apiKeyID]
+	roleName, roleNameOK := req.Secret.InternalData[roleNameField]
 
 	if dynamicIDSecret {
 		err = b.iamHelper.DeleteServiceID(adminToken, serviceIDRaw.(string))
 		if err != nil {
-			b.Logger().Error("error revoking secret", "serviceID", serviceIDRaw, "error", err)
+			if !roleNameOK {
+				roleName = "<Not Found>"
+			}
+			accountID := "<Not Found>"
+			config, errResp := b.getConfig(ctx, req.Storage)
+			if errResp == nil {
+				accountID = config.Account
+			}
+			b.Logger().Error("An error occurred removing a service ID while revoking a secret lease. "+
+				"The service ID may have been manually deleted in IBM Cloud. The administrator should verify the service ID "+
+				"is removed.", "serviceID", serviceIDRaw, "vaultRole", roleName, "accountID", accountID, "deleteError", err)
 			return nil, err
 		}
 	} else if staticIDSecret {
 		err = b.iamHelper.DeleteAPIKey(adminToken, apiKeyIDRaw.(string))
 		if err != nil {
-			b.Logger().Error("error revoking secret", "apiKeyID", apiKeyIDRaw, "error", err)
+			if !roleNameOK {
+				roleName = "<Not Found>"
+			}
+			accountID := "<Not Found>"
+			config, errResp := b.getConfig(ctx, req.Storage)
+			if errResp == nil {
+				accountID = config.Account
+			}
+			b.Logger().Error("An error occurred removing an API key while revoking a secret lease. "+
+				"The API key may have been manually deleted in IBM Cloud. The administrator should verify the API key "+
+				"is removed.", "apiKeyID", apiKeyIDRaw, "vaultRole", roleName, "accountID", accountID, "deleteError", err)
 			return nil, err
 		}
 
