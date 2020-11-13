@@ -312,7 +312,7 @@ Deletes the previously registered role.
 |----------------|--------------------------------------------------|
 | `GET`          |  `/ibmcloud/creds/:name`                         |
 
-Generates an API key for a service ID. If the named role was configured a list of access groups, rather than
+Generates an API key for a service ID. If the named role was configured with a list of access groups, rather than
 a service ID, a service ID will created, added as a member to the groups, and an API key generated for
 the service ID.
 
