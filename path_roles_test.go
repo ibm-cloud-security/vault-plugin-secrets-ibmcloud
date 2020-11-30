@@ -213,7 +213,8 @@ func TestAccessGroupLimits(t *testing.T) {
 	}
 
 	// Test more than the max num of access groups
-	boundGroups := [maxGroupsPerRole + 1]string{}
+	//boundGroups := [maxGroupsPerRole + 1]string{}
+	boundGroups := make([]string, maxGroupsPerRole+1)
 	for index := range boundGroups {
 		boundGroups[index] = fmt.Sprintf("group%d", index)
 	}
