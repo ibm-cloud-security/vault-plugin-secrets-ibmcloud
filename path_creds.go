@@ -159,6 +159,9 @@ func (b *ibmCloudSecretBackend) getSecretKey(ctx context.Context, s logical.Stor
 		if err != nil {
 			return nil, err
 		}
+		if resp.IsError() {
+			return resp, nil
+		}
 	} else {
 		return logical.ErrorResponse("role %s has neither access groups nor a service ID", roleName), nil
 	}

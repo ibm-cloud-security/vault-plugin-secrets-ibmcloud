@@ -105,6 +105,18 @@ func TestDynamicServiceID(t *testing.T) {
 
 }
 
+func TestStaticServiceIDDeleted(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Set up
+	b, s := getMockedBackendStaticServiceIDDeleteTest(t, ctrl)
+
+	testRoleCreate(t, b, s, map[string]interface{}{nameField: "testRole", serviceIDField: "serviceID1"})
+	// Test failed get
+	testFailedGet(t, b, s)
+}
+
 /*
  Tests a successful Get (read) of a credential and validates the returned Secret.
  The internalData parameter is used to pass in key-values that differ between static and dynamic service ID credentials.
@@ -165,12 +177,8 @@ func testFailedGet(t *testing.T, b *ibmCloudSecretBackend, s logical.Storage) {
 		Path:      "creds/testRole",
 		Storage:   s,
 	})
-	if resp != nil {
-		t.Fatalf("expected nil response, actual:%#v", resp)
-	}
-
-	if err == nil {
-		t.Fatalf("expected an error, received nil")
+	if (err == nil) && (resp == nil || !resp.IsError()) {
+		t.Fatalf("expected an error, or an error Response, actual returns: resp:%#v err:%#v", resp, err)
 	}
 }
 
@@ -428,6 +436,43 @@ func getMockedBackendDynamicServiceID(t *testing.T, ctrl *gomock.Controller, cal
 
 	// Mock for revoke
 	mockHelper.EXPECT().DeleteServiceID(adminToken, "createdServiceID").Times(callCount["DeleteServiceID"]).Return(nil)
+
+	b, s := testBackendWithMock(t, mockHelper)
+	err := testConfigCreate(t, b, s, configData)
+	if err != nil {
+		t.Fatal("error configuring the backend")
+	}
+
+	return b, s
+}
+
+func getMockedBackendStaticServiceIDDeleteTest(t *testing.T, ctrl *gomock.Controller) (*ibmCloudSecretBackend, logical.Storage) {
+	t.Helper()
+
+	var configData = map[string]interface{}{
+		apiKeyField:    "adminKey",
+		accountIDField: "theAccountID",
+	}
+	adminToken := "AdminToken"
+	mockHelper := NewMockiamHelper(ctrl)
+	// For the adminKey we always return AdminToken, this lets enforce that the code is correctly using the admin token
+	// for the IBM Cloud API calls calls.
+	mockHelper.EXPECT().ObtainToken("adminKey").Return(adminToken, nil)
+	mockHelper.EXPECT().VerifyToken(gomock.Any(), adminToken).Return(&tokenInfo{Expiry: time.Now().Add(time.Hour)}, nil)
+
+	// Mock for create of the test role
+	mockHelper.EXPECT().CheckServiceIDAccount(adminToken, gomock.Any(), "theAccountID").
+		DoAndReturn(func(iamToken, serviceID, accountID string) (*serviceIDv1Response, *logical.Response) {
+			if !strutil.StrListContains([]string{"serviceID1"}, serviceID) {
+				return nil, logical.ErrorResponse("CheckServiceIDAccount error with %s", serviceID)
+			}
+			return &serviceIDv1Response{ID: "serviceID1", IAMID: fmt.Sprintf("%s_iam", serviceID)}, nil
+		})
+	// Mock to fail, simulating a service ID being deleted directly in IBM Cloud or other ID checking failure
+	mockHelper.EXPECT().CheckServiceIDAccount(adminToken, gomock.Any(), "theAccountID").
+		DoAndReturn(func(iamToken, serviceID, accountID string) (*serviceIDv1Response, *logical.Response) {
+			return nil, logical.ErrorResponse("CheckServiceIDAccount error with %s", serviceID)
+		})
 
 	b, s := testBackendWithMock(t, mockHelper)
 	err := testConfigCreate(t, b, s, configData)
