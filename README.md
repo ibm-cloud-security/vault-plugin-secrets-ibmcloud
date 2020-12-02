@@ -5,6 +5,9 @@ This plugin dynamically generates API keys for IBM Cloud service IDs. The servic
 the plugin can dynamically create it and assign it membership in a set of IBM Cloud access groups. This enables
 users to gain access to IBM Cloud resources without needing to create or manage dedicated service IDs. 
 
+## Versions
+This version of the plugin was tested with Vault 1.6.0.
+
 ## Setup
 
 1. The plugin must be built before it is installed. Follow the steps in [Developing](#Developing) to build
@@ -353,7 +356,11 @@ See docs on how to renew and revoke leases.
 ## Developing
 
 For local dev first make sure Go is properly installed, including
-setting up a [GOPATH](https://golang.org/doc/code.html#GOPATH).
+setting up a [GOPATH](https://golang.org/doc/code.html#GOPATH). The version
+of Go that is installed should match the level required by the version of Vault
+that will be used. See [Vault's requirements](https://github.com/hashicorp/vault#developing-vault)
+for more information.
+
 Next, clone this repository:
 
 ```sh
