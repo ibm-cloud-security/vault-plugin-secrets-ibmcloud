@@ -1,0 +1,238 @@
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - 'v*'
+
+name: Build release
+
+jobs:
+  build:
+    name: Build and upload release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.15
+        id: go
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Get dependencies
+        run: make bootstrap
+
+      - name: Build
+        run: make
+
+      - name: Get the release version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+
+      - name: Rename output zips to contain version number
+        run: |
+          mv darwin_amd64.zip vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_darwin_amd64.zip
+          mv freebsd_386.zip vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_freebsd_386.zip
+          mv freebsd_amd64.zip vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_freebsd_amd64.zip
+          mv freebsd_arm.zip vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_freebsd_arm.zip
+          mv linux_386.zip vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_linux_386.zip
+          mv linux_amd64.zip vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_linux_amd64.zip
+          mv linux_arm.zip vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_linux_arm.zip
+          mv linux_arm64.zip vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_linux_arm64.zip
+          mv netbsd_386.zip vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_netbsd_386.zip
+          mv netbsd_amd64.zip vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_netbsd_amd64.zip
+          mv netbsd_arm.zip vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_netbsd_arm.zip
+          mv openbsd_386.zip vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_openbsd_386.zip
+          mv openbsd_amd64.zip vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_openbsd_amd64.zip
+          mv solaris_amd64.zip vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_solaris_amd64.zip
+          mv windows_386.zip vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_windows_386.zip
+          mv windows_amd64.zip vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_windows_amd64.zip
+        working-directory: ./pkg
+
+      - name: Generate SHA256 sums
+        id: generate_sha256
+        run: shasum -a 256 *.zip > vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_SHA256SUMS
+        working-directory: ./pkg
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload shasums file
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./pkg/vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_SHA256SUMS
+          asset_name: vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_SHA256SUMS
+          asset_content_type: text/plain
+
+      - name: Upload darwin_amd64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./pkg/vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_darwin_amd64.zip
+          asset_name: vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_darwin_amd64.zip
+          asset_content_type: application/zip
+
+      - name: Upload freebsd_386
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./pkg/vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_freebsd_386.zip
+          asset_name: vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_freebsd_386.zip
+          asset_content_type: application/zip
+
+      - name: Upload freebsd_amd64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./pkg/vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_freebsd_amd64.zip
+          asset_name: vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_freebsd_amd64.zip
+          asset_content_type: application/zip
+
+      - name: Upload freebsd_arm
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./pkg/vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_freebsd_arm.zip
+          asset_name: vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_freebsd_arm.zip
+          asset_content_type: application/zip
+
+      - name: Upload linux_386
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./pkg/vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_linux_386.zip
+          asset_name: vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_linux_386.zip
+          asset_content_type: application/zip
+
+      - name: Upload linux_amd64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./pkg/vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_linux_amd64.zip
+          asset_name: vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_linux_amd64.zip
+          asset_content_type: application/zip
+
+      - name: Upload linux_arm
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./pkg/vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_linux_arm.zip
+          asset_name: vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_linux_arm.zip
+          asset_content_type: application/zip
+
+      - name: Upload linux_arm64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./pkg/vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_linux_arm64.zip
+          asset_name: vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_linux_arm64.zip
+          asset_content_type: application/zip
+
+      - name: Upload netbsd_386
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./pkg/vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_netbsd_386.zip
+          asset_name: vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_netbsd_386.zip
+          asset_content_type: application/zip
+
+      - name: Upload netbsd_amd64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./pkg/vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_netbsd_amd64.zip
+          asset_name: vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_netbsd_amd64.zip
+          asset_content_type: application/zip
+
+      - name: Upload netbsd_arm
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./pkg/vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_netbsd_arm.zip
+          asset_name: vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_netbsd_arm.zip
+          asset_content_type: application/zip
+
+      - name: Upload openbsd_386
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./pkg/vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_openbsd_386.zip
+          asset_name: vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_openbsd_386.zip
+          asset_content_type: application/zip
+
+      - name: Upload openbsd_amd64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./pkg/vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_openbsd_amd64.zip
+          asset_name: vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_openbsd_amd64.zip
+          asset_content_type: application/zip
+
+      - name: Upload solaris_amd64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./pkg/vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_solaris_amd64.zip
+          asset_name: vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_solaris_amd64.zip
+          asset_content_type: application/zip
+
+      - name: Upload windows_386
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./pkg/vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_windows_386.zip
+          asset_name: vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_windows_386.zip
+          asset_content_type: application/zip
+
+      - name: Upload windows_amd64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./pkg/vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_windows_amd64.zip
+          asset_name: vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_windows_amd64.zip
+          asset_content_type: application/zip
+
