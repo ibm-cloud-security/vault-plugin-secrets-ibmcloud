@@ -233,6 +233,6 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./pkg/vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_windows_amd64.zip
-          asset_name: vault-plugin-auth-secrets_${{ steps.get_version.outputs.VERSION }}_windows_amd64.zip
+          asset_name: vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_windows_amd64.zip
           asset_content_type: application/zip
 
