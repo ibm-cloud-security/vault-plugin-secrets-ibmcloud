@@ -32,27 +32,27 @@ jobs:
 
       - name: Rename output zips to contain version number
         run: |
-          mv darwin_amd64.zip vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_darwin_amd64.zip
-          mv freebsd_386.zip vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_freebsd_386.zip
-          mv freebsd_amd64.zip vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_freebsd_amd64.zip
-          mv freebsd_arm.zip vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_freebsd_arm.zip
-          mv linux_386.zip vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_linux_386.zip
-          mv linux_amd64.zip vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_linux_amd64.zip
-          mv linux_arm.zip vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_linux_arm.zip
-          mv linux_arm64.zip vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_linux_arm64.zip
-          mv netbsd_386.zip vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_netbsd_386.zip
-          mv netbsd_amd64.zip vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_netbsd_amd64.zip
-          mv netbsd_arm.zip vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_netbsd_arm.zip
-          mv openbsd_386.zip vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_openbsd_386.zip
-          mv openbsd_amd64.zip vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_openbsd_amd64.zip
-          mv solaris_amd64.zip vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_solaris_amd64.zip
-          mv windows_386.zip vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_windows_386.zip
-          mv windows_amd64.zip vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_windows_amd64.zip
+          mv darwin_amd64.zip vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_darwin_amd64.zip
+          mv freebsd_386.zip vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_freebsd_386.zip
+          mv freebsd_amd64.zip vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_freebsd_amd64.zip
+          mv freebsd_arm.zip vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_freebsd_arm.zip
+          mv linux_386.zip vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_linux_386.zip
+          mv linux_amd64.zip vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_linux_amd64.zip
+          mv linux_arm.zip vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_linux_arm.zip
+          mv linux_arm64.zip vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_linux_arm64.zip
+          mv netbsd_386.zip vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_netbsd_386.zip
+          mv netbsd_amd64.zip vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_netbsd_amd64.zip
+          mv netbsd_arm.zip vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_netbsd_arm.zip
+          mv openbsd_386.zip vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_openbsd_386.zip
+          mv openbsd_amd64.zip vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_openbsd_amd64.zip
+          mv solaris_amd64.zip vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_solaris_amd64.zip
+          mv windows_386.zip vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_windows_386.zip
+          mv windows_amd64.zip vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_windows_amd64.zip
         working-directory: ./pkg
 
       - name: Generate SHA256 sums
         id: generate_sha256
-        run: shasum -a 256 *.zip > vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_SHA256SUMS
+        run: shasum -a 256 *.zip > vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_SHA256SUMS
         working-directory: ./pkg
 
       - name: Create Release
@@ -72,8 +72,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./pkg/vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_SHA256SUMS
-          asset_name: vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_SHA256SUMS
+          asset_path: ./pkg/vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_SHA256SUMS
+          asset_name: vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_SHA256SUMS
           asset_content_type: text/plain
 
       - name: Upload darwin_amd64
@@ -82,8 +82,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./pkg/vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_darwin_amd64.zip
-          asset_name: vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_darwin_amd64.zip
+          asset_path: ./pkg/vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_darwin_amd64.zip
+          asset_name: vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_darwin_amd64.zip
           asset_content_type: application/zip
 
       - name: Upload freebsd_386
@@ -92,8 +92,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./pkg/vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_freebsd_386.zip
-          asset_name: vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_freebsd_386.zip
+          asset_path: ./pkg/vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_freebsd_386.zip
+          asset_name: vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_freebsd_386.zip
           asset_content_type: application/zip
 
       - name: Upload freebsd_amd64
@@ -102,8 +102,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./pkg/vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_freebsd_amd64.zip
-          asset_name: vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_freebsd_amd64.zip
+          asset_path: ./pkg/vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_freebsd_amd64.zip
+          asset_name: vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_freebsd_amd64.zip
           asset_content_type: application/zip
 
       - name: Upload freebsd_arm
@@ -112,8 +112,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./pkg/vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_freebsd_arm.zip
-          asset_name: vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_freebsd_arm.zip
+          asset_path: ./pkg/vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_freebsd_arm.zip
+          asset_name: vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_freebsd_arm.zip
           asset_content_type: application/zip
 
       - name: Upload linux_386
@@ -122,8 +122,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./pkg/vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_linux_386.zip
-          asset_name: vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_linux_386.zip
+          asset_path: ./pkg/vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_linux_386.zip
+          asset_name: vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_linux_386.zip
           asset_content_type: application/zip
 
       - name: Upload linux_amd64
@@ -132,8 +132,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./pkg/vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_linux_amd64.zip
-          asset_name: vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_linux_amd64.zip
+          asset_path: ./pkg/vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_linux_amd64.zip
+          asset_name: vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_linux_amd64.zip
           asset_content_type: application/zip
 
       - name: Upload linux_arm
@@ -142,8 +142,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./pkg/vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_linux_arm.zip
-          asset_name: vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_linux_arm.zip
+          asset_path: ./pkg/vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_linux_arm.zip
+          asset_name: vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_linux_arm.zip
           asset_content_type: application/zip
 
       - name: Upload linux_arm64
@@ -152,8 +152,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./pkg/vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_linux_arm64.zip
-          asset_name: vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_linux_arm64.zip
+          asset_path: ./pkg/vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_linux_arm64.zip
+          asset_name: vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_linux_arm64.zip
           asset_content_type: application/zip
 
       - name: Upload netbsd_386
@@ -162,8 +162,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./pkg/vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_netbsd_386.zip
-          asset_name: vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_netbsd_386.zip
+          asset_path: ./pkg/vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_netbsd_386.zip
+          asset_name: vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_netbsd_386.zip
           asset_content_type: application/zip
 
       - name: Upload netbsd_amd64
@@ -172,8 +172,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./pkg/vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_netbsd_amd64.zip
-          asset_name: vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_netbsd_amd64.zip
+          asset_path: ./pkg/vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_netbsd_amd64.zip
+          asset_name: vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_netbsd_amd64.zip
           asset_content_type: application/zip
 
       - name: Upload netbsd_arm
@@ -182,8 +182,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./pkg/vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_netbsd_arm.zip
-          asset_name: vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_netbsd_arm.zip
+          asset_path: ./pkg/vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_netbsd_arm.zip
+          asset_name: vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_netbsd_arm.zip
           asset_content_type: application/zip
 
       - name: Upload openbsd_386
@@ -192,8 +192,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./pkg/vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_openbsd_386.zip
-          asset_name: vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_openbsd_386.zip
+          asset_path: ./pkg/vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_openbsd_386.zip
+          asset_name: vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_openbsd_386.zip
           asset_content_type: application/zip
 
       - name: Upload openbsd_amd64
@@ -202,8 +202,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./pkg/vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_openbsd_amd64.zip
-          asset_name: vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_openbsd_amd64.zip
+          asset_path: ./pkg/vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_openbsd_amd64.zip
+          asset_name: vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_openbsd_amd64.zip
           asset_content_type: application/zip
 
       - name: Upload solaris_amd64
@@ -212,8 +212,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./pkg/vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_solaris_amd64.zip
-          asset_name: vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_solaris_amd64.zip
+          asset_path: ./pkg/vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_solaris_amd64.zip
+          asset_name: vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_solaris_amd64.zip
           asset_content_type: application/zip
 
       - name: Upload windows_386
@@ -222,8 +222,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./pkg/vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_windows_386.zip
-          asset_name: vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_windows_386.zip
+          asset_path: ./pkg/vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_windows_386.zip
+          asset_name: vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_windows_386.zip
           asset_content_type: application/zip
 
       - name: Upload windows_amd64
@@ -232,7 +232,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./pkg/vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_windows_amd64.zip
-          asset_name: vault-plugin-secrets_${{ steps.get_version.outputs.VERSION }}_windows_amd64.zip
+          asset_path: ./pkg/vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_windows_amd64.zip
+          asset_name: vault-plugin-secrets-ibmcloud_${{ steps.get_version.outputs.VERSION }}_windows_amd64.zip
           asset_content_type: application/zip
 
