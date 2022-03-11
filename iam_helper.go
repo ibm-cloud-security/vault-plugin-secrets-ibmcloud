@@ -5,15 +5,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/coreos/go-oidc"
-	"github.com/hashicorp/errwrap"
-	"github.com/hashicorp/go-cleanhttp"
-	"github.com/hashicorp/vault/sdk/logical"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/hashicorp/errwrap"
+	"github.com/hashicorp/go-cleanhttp"
+	"github.com/hashicorp/vault/sdk/logical"
 )
 
 // A struct to contain information from IBM Cloud tokens that we want to include in Vault token metadata
@@ -30,6 +31,8 @@ const (
 	getAccessGroup     = "/v2/groups/%s"
 	v1APIKeys          = "/v1/apikeys"
 	v1APIKeysID        = v1APIKeys + "/%s"
+	identity           = "/identity"
+	identityToken      = "/identity/token"
 )
 
 type accountIDDeserializer struct {
@@ -112,7 +115,14 @@ func (h *ibmCloudHelper) getProvider() (*oidc.Provider, error) {
 		return h.provider, nil
 	}
 
-	provider, err := oidc.NewProvider(h.providerCtx, iamIdentityEndpointDefault)
+	identityURL := getURL(iamEndpointFieldDefault, identity)
+	providerCtx := h.providerCtx
+
+	if identityURL != openIDIssuer {
+		providerCtx = oidc.InsecureIssuerURLContext(h.providerCtx, openIDIssuer)
+	}
+
+	provider, err := oidc.NewProvider(providerCtx, identityURL)
 	if err != nil {
 		return nil, errwrap.Wrapf("error creating provider with given values: {{err}}", err)
 	}
@@ -130,7 +140,7 @@ func (h *ibmCloudHelper) ObtainToken(apiKey string) (string, error) {
 	data.Set("apikey", apiKey)
 	data.Set("response_type", "cloud_iam")
 
-	req, err := http.NewRequest(http.MethodPost, iamIdentityEndpointDefault+"/token", strings.NewReader(data.Encode()))
+	req, err := http.NewRequest(http.MethodPost, getURL(iamEndpointFieldDefault, identityToken), strings.NewReader(data.Encode()))
 	if err != nil {
 		return "", errwrap.Wrapf("Error creating obtain token request: {{err}}", err)
 	}
@@ -162,7 +172,7 @@ func (h *ibmCloudHelper) VerifyToken(ctx context.Context, token string) (*tokenI
 	// verify the token
 	provider, err := h.getProvider()
 	if err != nil {
-		return nil, logical.ErrorResponse("unable to successfully parse all claims from token: %s", err)
+		return nil, logical.ErrorResponse("an error occurred retreiving the OIDC provider: %s", err)
 	}
 
 	oidcConfig := &oidc.Config{

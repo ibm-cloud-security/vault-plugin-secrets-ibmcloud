@@ -1,8 +1,8 @@
 package ibmcloudsecrets
 
 const (
-	iamEndpointFieldDefault    = "https://iam.cloud.ibm.com"
-	iamIdentityEndpointDefault = "https://iam.cloud.ibm.com/identity"
+	iamEndpointFieldDefault = "https://iam.cloud.ibm.com"
+	openIDIssuer            = "https://iam.cloud.ibm.com/identity"
 )
 
 //Number of minutes to renew the admin token before expiration
