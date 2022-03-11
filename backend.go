@@ -3,11 +3,12 @@ package ibmcloudsecrets
 import (
 	"context"
 	"errors"
-	"github.com/hashicorp/vault/sdk/framework"
-	"github.com/hashicorp/vault/sdk/logical"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/hashicorp/vault/sdk/framework"
+	"github.com/hashicorp/vault/sdk/logical"
 )
 
 func Factory(ctx context.Context, conf *logical.BackendConfig) (logical.Backend, error) {
@@ -23,7 +24,6 @@ type ibmCloudSecretBackend struct {
 	adminTokenLock   sync.RWMutex
 	adminToken       string
 	adminTokenExpiry time.Time
-	iamHelperLock    sync.RWMutex
 	iamHelper        iamHelper
 }
 

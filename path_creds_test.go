@@ -3,13 +3,14 @@ package ibmcloudsecrets
 import (
 	"context"
 	"fmt"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/golang/mock/gomock"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/helper/strutil"
 	"github.com/hashicorp/vault/sdk/logical"
-	"strings"
-	"testing"
-	"time"
 )
 
 func TestStaticServiceID(t *testing.T) {
@@ -269,7 +270,7 @@ func TestServiceID_WAL_Cleanup(t *testing.T) {
 
 	b, s := getMockedBackendDynamicServiceID(t, ctrl, callCount)
 
-	wal, err := framework.ListWAL(context.Background(), s)
+	wal, _ := framework.ListWAL(context.Background(), s)
 	if len(wal) != 0 {
 		t.Fatalf("The WAL is not empty at the start of the test.")
 	}

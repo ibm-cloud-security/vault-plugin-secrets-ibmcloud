@@ -3,14 +3,15 @@ package ibmcloudsecrets
 import (
 	"context"
 	"fmt"
-	"github.com/golang/mock/gomock"
-	"github.com/hashicorp/vault/sdk/helper/strutil"
-	"github.com/hashicorp/vault/sdk/logical"
 	"math/rand"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/golang/mock/gomock"
+	"github.com/hashicorp/vault/sdk/helper/strutil"
+	"github.com/hashicorp/vault/sdk/logical"
 )
 
 // Defaults for verifying response data. If a value is not included here, it must be included in the
@@ -232,7 +233,7 @@ func TestAccessGroupLimits(t *testing.T) {
 		nameField:           roleName,
 		accessGroupIDsField: []string{"AccessGroupId-PublicAccess"},
 	},
-		[]string{fmt.Sprintf("the AccessGroupId-PublicAccess access group is not allowed on roles")})
+		[]string{"the AccessGroupId-PublicAccess access group is not allowed on roles"})
 
 }
 

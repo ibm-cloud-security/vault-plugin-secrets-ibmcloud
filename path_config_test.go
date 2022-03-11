@@ -2,7 +2,6 @@ package ibmcloudsecrets
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/hashicorp/vault/sdk/logical"
@@ -63,16 +62,16 @@ func TestConfigDelete(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	resp, err := b.HandleRequest(context.Background(), &logical.Request{
+	_, err := b.HandleRequest(context.Background(), &logical.Request{
 		Operation: logical.DeleteOperation,
-		Path:      fmt.Sprintf("config"),
+		Path:      "config",
 		Storage:   s,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	resp, err = b.HandleRequest(context.Background(), &logical.Request{
+	resp, err := b.HandleRequest(context.Background(), &logical.Request{
 		Operation: logical.ReadOperation,
 		Path:      "config",
 		Storage:   s,
@@ -89,7 +88,7 @@ func TestConfigDelete(t *testing.T) {
 func testConfigCreate(t *testing.T, b *ibmCloudSecretBackend, s logical.Storage, d map[string]interface{}) error {
 	resp, err := b.HandleRequest(context.Background(), &logical.Request{
 		Operation: logical.CreateOperation,
-		Path:      fmt.Sprintf("config"),
+		Path:      "config",
 		Data:      d,
 		Storage:   s,
 	})
