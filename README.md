@@ -10,13 +10,12 @@ This version of the plugin was tested with Vault 1.6.0.
 
 ## Setup
 
-1. The plugin must be built before it is installed. Follow the steps in [Developing](#Developing) to build
-the plugin executable.
+1. Download a release of the plugin or build it from source. Follow the steps in [Developing](#Developing) to build
+the plugin executable from source.
 
 2. Register and enable the plugin
 
-    Copy the executable into Vault's configured plugin folder:
-`cp bin/vault-plugin-secrets-ibmcloud $VAULT_INSTALL/plugins`
+    Copy the executable into Vault's configured plugin folder. For example: `cp bin/vault-plugin-secrets-ibmcloud $VAULT_INSTALL/plugins`
 
     Register the plugin:
     ```shell script
@@ -387,14 +386,12 @@ $ make dev
 For local development, use Vault's "dev" mode for fast setup:
 
 ```sh
-$ vault server -dev -dev-plugin-dir="$(pwd)/bin"
+$ vault server -dev -config vault.hcl
 ```
 
-The plugin will automatically be added to the catalog with the name
-"vault-plugin-secrets-ibmcloud". Run the following command to enable this new auth
-method as a plugin:
-
-```sh
-$ vault secrets enable -plugin-name="vault-plugin-secrets-ibmcloud" -path="ibmcloud" plugin
-Success! Enabled vault-plugin-secrets-ibmcloud auth method at: ibmcloud/
+Where vault.hcl configures the plugin directory like this:
 ```
+plugin_directory = "./plugins"
+```
+
+Follow the setup instructions to copy, register, and enable the plugin.
