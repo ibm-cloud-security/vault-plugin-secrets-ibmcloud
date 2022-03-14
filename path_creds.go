@@ -3,6 +3,7 @@ package ibmcloudsecrets
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
@@ -94,8 +95,14 @@ func (b *ibmCloudSecretBackend) secretKeyRevoke(ctx context.Context, req *logica
 	apiKeyIDRaw, staticIDSecret := req.Secret.InternalData[apiKeyID]
 	roleName, roleNameOK := req.Secret.InternalData[roleNameField]
 
+	iam, resp := b.getIAMHelper(ctx, req.Storage)
+	if resp != nil {
+		b.Logger().Error("failed to retrieve an IAM helper", "error", resp.Error())
+		return resp, nil
+	}
+
 	if dynamicIDSecret {
-		err = b.iamHelper.DeleteServiceID(adminToken, serviceIDRaw.(string))
+		err = iam.DeleteServiceID(adminToken, serviceIDRaw.(string))
 		if err != nil {
 			if !roleNameOK {
 				roleName = "<Not Found>"
@@ -111,7 +118,7 @@ func (b *ibmCloudSecretBackend) secretKeyRevoke(ctx context.Context, req *logica
 			return nil, err
 		}
 	} else if staticIDSecret {
-		err = b.iamHelper.DeleteAPIKey(adminToken, apiKeyIDRaw.(string))
+		err = iam.DeleteAPIKey(adminToken, apiKeyIDRaw.(string))
 		if err != nil {
 			if !roleNameOK {
 				roleName = "<Not Found>"
@@ -174,10 +181,16 @@ func (b *ibmCloudSecretBackend) getSecretKey(ctx context.Context, s logical.Stor
 }
 
 func (b *ibmCloudSecretBackend) getSecretDynamicServiceID(ctx context.Context, s logical.Storage, role *ibmCloudRole, adminToken, roleName string, config *ibmCloudConfig) (*logical.Response, error) {
+	iam, resp := b.getIAMHelper(ctx, s)
+	if resp != nil {
+		b.Logger().Error("failed to retrieve an IAM helper", "error", resp.Error())
+		return resp, nil
+	}
+
 	// Create the service ID, which is the top level object to be tracked in the secret
 	// and deleted upon revocation. If any subsequent step fails, the service ID will be
 	// deleted as part of WAL rollback.
-	iamID, uniqueID, err := b.iamHelper.CreateServiceID(adminToken, config.Account, roleName)
+	iamID, uniqueID, err := iam.CreateServiceID(adminToken, config.Account, roleName)
 	if err != nil {
 		return nil, err
 	}
@@ -190,14 +203,14 @@ func (b *ibmCloudSecretBackend) getSecretDynamicServiceID(ctx context.Context, s
 
 	// Add service ID to access groups
 	for _, group := range role.AccessGroupIDs {
-		err := b.iamHelper.AddServiceIDToAccessGroup(adminToken, iamID, group)
+		err := iam.AddServiceIDToAccessGroup(adminToken, iamID, group)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	// Create API key
-	apiKey, err := b.iamHelper.CreateAPIKey(adminToken, iamID, config.Account, roleName)
+	apiKey, err := iam.CreateAPIKey(adminToken, iamID, config.Account, roleName)
 	if err != nil {
 		return nil, err
 	}
@@ -216,19 +229,25 @@ func (b *ibmCloudSecretBackend) getSecretDynamicServiceID(ctx context.Context, s
 		roleBindingHashField: role.BindingHash,
 	}
 
-	resp := b.Secret(secretTypeKey).Response(secretD, internalD)
+	resp = b.Secret(secretTypeKey).Response(secretD, internalD)
 	return resp, nil
 }
 
 func (b *ibmCloudSecretBackend) getSecretStaticServiceID(ctx context.Context, s logical.Storage, role *ibmCloudRole, adminToken, roleName string, config *ibmCloudConfig) (*logical.Response, error) {
 
+	iam, resp := b.getIAMHelper(ctx, s)
+	if resp != nil {
+		b.Logger().Error("failed to retrieve an IAM helper", "error", resp.Error())
+		return resp, nil
+	}
+
 	// Fetch the serviceID's IAM ID
-	idInfo, resp := b.iamHelper.CheckServiceIDAccount(adminToken, role.ServiceID, config.Account)
+	idInfo, resp := iam.CheckServiceIDAccount(adminToken, role.ServiceID, config.Account)
 	if resp != nil {
 		return resp, nil
 	}
 	// Create API key
-	apiKey, err := b.iamHelper.CreateAPIKey(adminToken, idInfo.IAMID, config.Account, roleName)
+	apiKey, err := iam.CreateAPIKey(adminToken, idInfo.IAMID, config.Account, roleName)
 	if err != nil {
 		return nil, err
 	}

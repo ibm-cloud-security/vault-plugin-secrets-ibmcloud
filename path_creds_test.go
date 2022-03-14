@@ -369,11 +369,12 @@ func getMockedBackendStaticServiceID(t *testing.T, ctrl *gomock.Controller, call
 	mockHelper.EXPECT().DeleteAPIKey(adminToken, "apiKeyID").
 		Return(nil)
 
-	b, s := testBackendWithMock(t, mockHelper)
+	b, s := testBackend(t)
 	err := testConfigCreate(t, b, s, configData)
 	if err != nil {
 		t.Fatal("error configuring the backend")
 	}
+	b.iamHelper = mockHelper
 
 	return b, s
 }
@@ -438,11 +439,12 @@ func getMockedBackendDynamicServiceID(t *testing.T, ctrl *gomock.Controller, cal
 	// Mock for revoke
 	mockHelper.EXPECT().DeleteServiceID(adminToken, "createdServiceID").Times(callCount["DeleteServiceID"]).Return(nil)
 
-	b, s := testBackendWithMock(t, mockHelper)
+	b, s := testBackend(t)
 	err := testConfigCreate(t, b, s, configData)
 	if err != nil {
 		t.Fatal("error configuring the backend")
 	}
+	b.iamHelper = mockHelper
 
 	return b, s
 }
@@ -475,11 +477,12 @@ func getMockedBackendStaticServiceIDDeleteTest(t *testing.T, ctrl *gomock.Contro
 			return nil, logical.ErrorResponse("CheckServiceIDAccount error with %s", serviceID)
 		})
 
-	b, s := testBackendWithMock(t, mockHelper)
+	b, s := testBackend(t)
 	err := testConfigCreate(t, b, s, configData)
 	if err != nil {
 		t.Fatal("error configuring the backend")
 	}
+	b.iamHelper = mockHelper
 
 	return b, s
 }

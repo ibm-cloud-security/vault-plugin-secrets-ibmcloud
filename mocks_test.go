@@ -6,79 +6,50 @@ package ibmcloudsecrets
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	logical "github.com/hashicorp/vault/sdk/logical"
-	reflect "reflect"
 )
 
-// MockiamHelper is a mock of iamHelper interface
+// MockiamHelper is a mock of iamHelper interface.
 type MockiamHelper struct {
 	ctrl     *gomock.Controller
 	recorder *MockiamHelperMockRecorder
 }
 
-// MockiamHelperMockRecorder is the mock recorder for MockiamHelper
+// MockiamHelperMockRecorder is the mock recorder for MockiamHelper.
 type MockiamHelperMockRecorder struct {
 	mock *MockiamHelper
 }
 
-// NewMockiamHelper creates a new mock instance
+// NewMockiamHelper creates a new mock instance.
 func NewMockiamHelper(ctrl *gomock.Controller) *MockiamHelper {
 	mock := &MockiamHelper{ctrl: ctrl}
 	mock.recorder = &MockiamHelperMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockiamHelper) EXPECT() *MockiamHelperMockRecorder {
 	return m.recorder
 }
 
-// ObtainToken mocks base method
-func (m *MockiamHelper) ObtainToken(apiKey string) (string, error) {
+// AddServiceIDToAccessGroup mocks base method.
+func (m *MockiamHelper) AddServiceIDToAccessGroup(iamToken, iamID, group string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ObtainToken", apiKey)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ObtainToken indicates an expected call of ObtainToken
-func (mr *MockiamHelperMockRecorder) ObtainToken(apiKey interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObtainToken", reflect.TypeOf((*MockiamHelper)(nil).ObtainToken), apiKey)
-}
-
-// VerifyToken mocks base method
-func (m *MockiamHelper) VerifyToken(ctx context.Context, token string) (*tokenInfo, *logical.Response) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "VerifyToken", ctx, token)
-	ret0, _ := ret[0].(*tokenInfo)
-	ret1, _ := ret[1].(*logical.Response)
-	return ret0, ret1
-}
-
-// VerifyToken indicates an expected call of VerifyToken
-func (mr *MockiamHelperMockRecorder) VerifyToken(ctx, token interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyToken", reflect.TypeOf((*MockiamHelper)(nil).VerifyToken), ctx, token)
-}
-
-// VerifyAccessGroupExists mocks base method
-func (m *MockiamHelper) VerifyAccessGroupExists(iamToken, accessGroup, accountID string) *logical.Response {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "VerifyAccessGroupExists", iamToken, accessGroup, accountID)
-	ret0, _ := ret[0].(*logical.Response)
+	ret := m.ctrl.Call(m, "AddServiceIDToAccessGroup", iamToken, iamID, group)
+	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// VerifyAccessGroupExists indicates an expected call of VerifyAccessGroupExists
-func (mr *MockiamHelperMockRecorder) VerifyAccessGroupExists(iamToken, accessGroup, accountID interface{}) *gomock.Call {
+// AddServiceIDToAccessGroup indicates an expected call of AddServiceIDToAccessGroup.
+func (mr *MockiamHelperMockRecorder) AddServiceIDToAccessGroup(iamToken, iamID, group interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyAccessGroupExists", reflect.TypeOf((*MockiamHelper)(nil).VerifyAccessGroupExists), iamToken, accessGroup, accountID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddServiceIDToAccessGroup", reflect.TypeOf((*MockiamHelper)(nil).AddServiceIDToAccessGroup), iamToken, iamID, group)
 }
 
-// CheckServiceIDAccount mocks base method
+// CheckServiceIDAccount mocks base method.
 func (m *MockiamHelper) CheckServiceIDAccount(iamToken, identifier, accountID string) (*serviceIDv1Response, *logical.Response) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckServiceIDAccount", iamToken, identifier, accountID)
@@ -87,13 +58,40 @@ func (m *MockiamHelper) CheckServiceIDAccount(iamToken, identifier, accountID st
 	return ret0, ret1
 }
 
-// CheckServiceIDAccount indicates an expected call of CheckServiceIDAccount
+// CheckServiceIDAccount indicates an expected call of CheckServiceIDAccount.
 func (mr *MockiamHelperMockRecorder) CheckServiceIDAccount(iamToken, identifier, accountID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckServiceIDAccount", reflect.TypeOf((*MockiamHelper)(nil).CheckServiceIDAccount), iamToken, identifier, accountID)
 }
 
-// CreateServiceID mocks base method
+// Cleanup mocks base method.
+func (m *MockiamHelper) Cleanup() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Cleanup")
+}
+
+// Cleanup indicates an expected call of Cleanup.
+func (mr *MockiamHelperMockRecorder) Cleanup() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cleanup", reflect.TypeOf((*MockiamHelper)(nil).Cleanup))
+}
+
+// CreateAPIKey mocks base method.
+func (m *MockiamHelper) CreateAPIKey(iamToken, IAMid, accountID, roleName string) (*APIKeyV1Response, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateAPIKey", iamToken, IAMid, accountID, roleName)
+	ret0, _ := ret[0].(*APIKeyV1Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateAPIKey indicates an expected call of CreateAPIKey.
+func (mr *MockiamHelperMockRecorder) CreateAPIKey(iamToken, IAMid, accountID, roleName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAPIKey", reflect.TypeOf((*MockiamHelper)(nil).CreateAPIKey), iamToken, IAMid, accountID, roleName)
+}
+
+// CreateServiceID mocks base method.
 func (m *MockiamHelper) CreateServiceID(iamToken, accountID, roleName string) (string, string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateServiceID", iamToken, accountID, roleName)
@@ -103,56 +101,13 @@ func (m *MockiamHelper) CreateServiceID(iamToken, accountID, roleName string) (s
 	return ret0, ret1, ret2
 }
 
-// CreateServiceID indicates an expected call of CreateServiceID
+// CreateServiceID indicates an expected call of CreateServiceID.
 func (mr *MockiamHelperMockRecorder) CreateServiceID(iamToken, accountID, roleName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateServiceID", reflect.TypeOf((*MockiamHelper)(nil).CreateServiceID), iamToken, accountID, roleName)
 }
 
-// DeleteServiceID mocks base method
-func (m *MockiamHelper) DeleteServiceID(iamToken, identifier string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteServiceID", iamToken, identifier)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteServiceID indicates an expected call of DeleteServiceID
-func (mr *MockiamHelperMockRecorder) DeleteServiceID(iamToken, identifier interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteServiceID", reflect.TypeOf((*MockiamHelper)(nil).DeleteServiceID), iamToken, identifier)
-}
-
-// AddServiceIDToAccessGroup mocks base method
-func (m *MockiamHelper) AddServiceIDToAccessGroup(iamToken, iamID, group string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddServiceIDToAccessGroup", iamToken, iamID, group)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddServiceIDToAccessGroup indicates an expected call of AddServiceIDToAccessGroup
-func (mr *MockiamHelperMockRecorder) AddServiceIDToAccessGroup(iamToken, iamID, group interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddServiceIDToAccessGroup", reflect.TypeOf((*MockiamHelper)(nil).AddServiceIDToAccessGroup), iamToken, iamID, group)
-}
-
-// CreateAPIKey mocks base method
-func (m *MockiamHelper) CreateAPIKey(iamToken, IAMid, accountID, roleName string) (*APIKeyV1Response, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateAPIKey", iamToken, IAMid, accountID, roleName)
-	ret0, _ := ret[0].(*APIKeyV1Response)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateAPIKey indicates an expected call of CreateAPIKey
-func (mr *MockiamHelperMockRecorder) CreateAPIKey(iamToken, IAMid, accountID, roleName interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAPIKey", reflect.TypeOf((*MockiamHelper)(nil).CreateAPIKey), iamToken, IAMid, accountID, roleName)
-}
-
-// DeleteAPIKey mocks base method
+// DeleteAPIKey mocks base method.
 func (m *MockiamHelper) DeleteAPIKey(iamToken, apiKeyID string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteAPIKey", iamToken, apiKeyID)
@@ -160,32 +115,78 @@ func (m *MockiamHelper) DeleteAPIKey(iamToken, apiKeyID string) error {
 	return ret0
 }
 
-// DeleteAPIKey indicates an expected call of DeleteAPIKey
+// DeleteAPIKey indicates an expected call of DeleteAPIKey.
 func (mr *MockiamHelperMockRecorder) DeleteAPIKey(iamToken, apiKeyID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAPIKey", reflect.TypeOf((*MockiamHelper)(nil).DeleteAPIKey), iamToken, apiKeyID)
 }
 
-// Init mocks base method
-func (m *MockiamHelper) Init() {
+// DeleteServiceID mocks base method.
+func (m *MockiamHelper) DeleteServiceID(iamToken, identifier string) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Init")
+	ret := m.ctrl.Call(m, "DeleteServiceID", iamToken, identifier)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// Init indicates an expected call of Init
-func (mr *MockiamHelperMockRecorder) Init() *gomock.Call {
+// DeleteServiceID indicates an expected call of DeleteServiceID.
+func (mr *MockiamHelperMockRecorder) DeleteServiceID(iamToken, identifier interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockiamHelper)(nil).Init))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteServiceID", reflect.TypeOf((*MockiamHelper)(nil).DeleteServiceID), iamToken, identifier)
 }
 
-// Cleanup mocks base method
-func (m *MockiamHelper) Cleanup() {
+// Init mocks base method.
+func (m *MockiamHelper) Init(iamEndpoint string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Cleanup")
+	m.ctrl.Call(m, "Init", iamEndpoint)
 }
 
-// Cleanup indicates an expected call of Cleanup
-func (mr *MockiamHelperMockRecorder) Cleanup() *gomock.Call {
+// Init indicates an expected call of Init.
+func (mr *MockiamHelperMockRecorder) Init(iamEndpoint interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cleanup", reflect.TypeOf((*MockiamHelper)(nil).Cleanup))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockiamHelper)(nil).Init), iamEndpoint)
+}
+
+// ObtainToken mocks base method.
+func (m *MockiamHelper) ObtainToken(apiKey string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ObtainToken", apiKey)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ObtainToken indicates an expected call of ObtainToken.
+func (mr *MockiamHelperMockRecorder) ObtainToken(apiKey interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObtainToken", reflect.TypeOf((*MockiamHelper)(nil).ObtainToken), apiKey)
+}
+
+// VerifyAccessGroupExists mocks base method.
+func (m *MockiamHelper) VerifyAccessGroupExists(iamToken, accessGroup, accountID string) *logical.Response {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifyAccessGroupExists", iamToken, accessGroup, accountID)
+	ret0, _ := ret[0].(*logical.Response)
+	return ret0
+}
+
+// VerifyAccessGroupExists indicates an expected call of VerifyAccessGroupExists.
+func (mr *MockiamHelperMockRecorder) VerifyAccessGroupExists(iamToken, accessGroup, accountID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyAccessGroupExists", reflect.TypeOf((*MockiamHelper)(nil).VerifyAccessGroupExists), iamToken, accessGroup, accountID)
+}
+
+// VerifyToken mocks base method.
+func (m *MockiamHelper) VerifyToken(ctx context.Context, token string) (*tokenInfo, *logical.Response) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifyToken", ctx, token)
+	ret0, _ := ret[0].(*tokenInfo)
+	ret1, _ := ret[1].(*logical.Response)
+	return ret0, ret1
+}
+
+// VerifyToken indicates an expected call of VerifyToken.
+func (mr *MockiamHelperMockRecorder) VerifyToken(ctx, token interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyToken", reflect.TypeOf((*MockiamHelper)(nil).VerifyToken), ctx, token)
 }

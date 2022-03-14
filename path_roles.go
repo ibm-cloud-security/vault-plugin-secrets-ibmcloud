@@ -7,11 +7,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/helper/strutil"
 	"github.com/hashicorp/vault/sdk/logical"
-	"strings"
-	"time"
 )
 
 // pathsRoles returns the path configurations for the CRUD operations on roles
@@ -247,15 +248,21 @@ func (b *ibmCloudSecretBackend) pathRoleCreateUpdate(ctx context.Context, req *l
 		return nil, err
 	}
 
+	iam, resp := b.getIAMHelper(ctx, req.Storage)
+	if resp != nil {
+		b.Logger().Error("failed to retrieve an IAM helper", "error", resp.Error())
+		return resp, nil
+	}
+
 	for _, group := range role.AccessGroupIDs {
-		resp := b.iamHelper.VerifyAccessGroupExists(adminToken, group, config.Account)
+		resp := iam.VerifyAccessGroupExists(adminToken, group, config.Account)
 		if resp != nil {
 			return resp, nil
 		}
 	}
 
 	if len(role.ServiceID) != 0 {
-		_, resp := b.iamHelper.CheckServiceIDAccount(adminToken, role.ServiceID, config.Account)
+		_, resp := iam.CheckServiceIDAccount(adminToken, role.ServiceID, config.Account)
 		if resp != nil {
 			return resp, nil
 		}

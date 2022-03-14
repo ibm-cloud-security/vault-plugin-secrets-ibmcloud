@@ -13,6 +13,7 @@ const (
 
 const (
 	accountIDField       = "account_id"
+	iamEndpointField     = "iam_endpoint"
 	roleField            = "role"
 	apiKeyField          = "api_key"
 	redacted             = "<redacted>"

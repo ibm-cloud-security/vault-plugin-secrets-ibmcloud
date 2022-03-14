@@ -3,6 +3,7 @@ package ibmcloudsecrets
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/vault/sdk/logical"
 )
 
@@ -23,7 +24,13 @@ func (b *ibmCloudSecretBackend) walRollback(ctx context.Context, req *logical.Re
 	}
 	b.Logger().Debug("rolling back serviceID", "serviceID", serviceID)
 
-	err = b.iamHelper.DeleteServiceID(adminToken, serviceID)
+	iam, resp := b.getIAMHelper(ctx, req.Storage)
+	if resp != nil {
+		b.Logger().Error("failed to retrieve an IAM helper", "error", resp.Error())
+		return resp.Error()
+	}
+
+	err = iam.DeleteServiceID(adminToken, serviceID)
 
 	return err
 }

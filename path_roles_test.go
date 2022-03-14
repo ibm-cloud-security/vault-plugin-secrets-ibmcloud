@@ -448,11 +448,12 @@ func getMockedBackend(t *testing.T, ctrl *gomock.Controller, minCalls map[string
 		return nil, nil
 	})
 
-	b, s := testBackendWithMock(t, mockHelper)
+	b, s := testBackend(t)
 	err := testConfigCreate(t, b, s, configData)
 	if err != nil {
 		t.Fatal("error configuring the backend")
 	}
+	b.iamHelper = mockHelper
 
 	return b, s
 }
