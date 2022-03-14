@@ -19,6 +19,10 @@ func pathConfig(b *ibmCloudSecretBackend) *framework.Path {
 				Type:        framework.TypeString,
 				Description: "The account ID.",
 			},
+			iamEndpointField: {
+				Type:        framework.TypeString,
+				Description: "The custom or private IAM endpoint.",
+			},
 		},
 		ExistenceCheck: b.pathConfigExistenceCheck,
 		Operations: map[logical.Operation]framework.OperationHandler{
@@ -93,7 +97,12 @@ func (b *ibmCloudSecretBackend) pathConfigWrite(ctx context.Context, req *logica
 		return logical.ErrorResponse("the required field %s is missing", accountIDField), nil
 	}
 
-	config.IAMEndpoint = iamEndpointFieldDefault
+	iamEndpoint, ok := data.GetOk(iamEndpointField)
+	if ok {
+		config.IAMEndpoint = iamEndpoint.(string)
+	} else {
+		config.IAMEndpoint = iamEndpointFieldDefault
+	}
 
 	entry, err := logical.StorageEntryJSON("config", config)
 	if err != nil {
