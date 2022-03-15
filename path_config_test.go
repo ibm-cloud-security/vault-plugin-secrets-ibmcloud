@@ -44,6 +44,54 @@ func TestConfig_Write(t *testing.T) {
 		if !ok {
 			t.Fatal("the account_id field was not found in the read config")
 		}
+		keyVal, ok = resp.Data[iamEndpointField]
+		if !ok {
+			t.Fatal("the iam_endpoint field was not found in the read config")
+		}
+		if keyVal != iamEndpointFieldDefault {
+			t.Fatal("the iam_endpoint was not defaulted as expected")
+		}
+
+	} else {
+		t.Fatal("did not get a response from the read post-create")
+	}
+}
+
+func TestConfig_WriteIAMEndpoint(t *testing.T) {
+	b, s := testBackend(t)
+
+	configData := map[string]interface{}{}
+	if err := testConfigCreate(t, b, s, configData); err == nil {
+		t.Fatal("expected error")
+	}
+
+	testEndpoint := "https://private.iam.cloud.ibm.com"
+	configData = map[string]interface{}{
+		apiKeyField:      "theAPIKey",
+		accountIDField:   "theAccount",
+		iamEndpointField: testEndpoint,
+	}
+	if err := testConfigCreate(t, b, s, configData); err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	resp, err := b.HandleRequest(context.Background(), &logical.Request{
+		Operation: logical.ReadOperation,
+		Path:      "config",
+		Storage:   s,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if resp != nil {
+		keyVal, ok := resp.Data[iamEndpointField]
+		if !ok {
+			t.Fatal("the iam_endpoint field was not found in the read config")
+		}
+		if keyVal != testEndpoint {
+			t.Fatal("the iam_endpoint was set as expected")
+		}
 
 	} else {
 		t.Fatal("did not get a response from the read post-create")
