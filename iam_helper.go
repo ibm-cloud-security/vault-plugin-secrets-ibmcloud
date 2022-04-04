@@ -360,10 +360,10 @@ func (h *ibmCloudHelper) CreateAPIKey(iamToken, IAMid, accountID, roleName strin
 		return nil, err
 	}
 
-	if "" == keyInfo.APIKey {
+	if len(keyInfo.APIKey) == 0 {
 		return nil, fmt.Errorf("an empty API key was returned with code %v and response %v", httpStatus, string(body))
 	}
-	if "" == keyInfo.ID {
+	if len(keyInfo.ID) == 0 {
 		return nil, fmt.Errorf("API key with an empty ID was returned with code %v and response %v", httpStatus, string(body))
 	}
 	return keyInfo, nil
