@@ -25,6 +25,7 @@ type ibmCloudSecretBackend struct {
 	adminToken       string
 	adminTokenExpiry time.Time
 	iamHelper        iamHelper
+	iamHelperLock    sync.RWMutex
 }
 
 func backend(c *logical.BackendConfig) *ibmCloudSecretBackend {
