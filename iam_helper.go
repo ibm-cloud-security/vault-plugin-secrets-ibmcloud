@@ -31,6 +31,7 @@ const (
 	getAccessGroup     = "/v2/groups/%s"
 	v1APIKeys          = "/v1/apikeys"
 	v1APIKeysID        = v1APIKeys + "/%s"
+	v1APIKeyDetails    = "/v1/apikeys/details"
 	identity           = "/identity"
 	identityToken      = "/identity/token"
 )
@@ -63,6 +64,12 @@ type APIKeyV1Response struct {
 	ID     string `json:"id"`
 }
 
+type APIKeyDetailsResponse struct {
+	ID        string `json:"id"`
+	IAMID     string `json:"iam_id"`
+	AccountID string `json:"account_id"`
+}
+
 type iamHelper interface {
 	ObtainToken(apiKey string) (string, error)
 	VerifyToken(ctx context.Context, token string) (*tokenInfo, *logical.Response)
@@ -73,6 +80,7 @@ type iamHelper interface {
 	AddServiceIDToAccessGroup(iamToken, iamID, group string) error
 	CreateAPIKey(iamToken, IAMid, accountID, name, description string) (*APIKeyV1Response, error)
 	DeleteAPIKey(iamToken, apiKeyID string) error
+	GetAPIKeyDetails(iamToken, apiKeyValue string) (*APIKeyDetailsResponse, error)
 	Init(iamEndpoint string)
 	Cleanup()
 }
@@ -401,6 +409,33 @@ func (h *ibmCloudHelper) DeleteAPIKey(iamToken, apiKeyID string) error {
 		return fmt.Errorf("unexpected http status code: %v with response %v", httpStatus, string(body))
 	}
 	return nil
+}
+
+func (h *ibmCloudHelper) GetAPIKeyDetails(iamToken, apiKeyValue string) (*APIKeyDetailsResponse, error) {
+	r, err := http.NewRequest(http.MethodGet, h.getURL(v1APIKeyDetails), nil)
+	if err != nil {
+		return nil, errwrap.Wrapf("failed creating http request: {{err}}", err)
+	}
+
+	r.Header.Set("Authorization", "Bearer "+iamToken)
+	r.Header.Set("IAM-Apikey", apiKeyValue)
+	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("Accept", "application/json")
+	body, httpStatus, err := httpRequest(h.httpClient, r)
+	if err != nil {
+		return nil, err
+	}
+
+	keyDetails := new(APIKeyDetailsResponse)
+
+	if err := json.Unmarshal(body, &keyDetails); err != nil {
+		return nil, err
+	}
+
+	if httpStatus != 200 {
+		return nil, fmt.Errorf("unexpected http status code: %v with response %v", httpStatus, string(body))
+	}
+	return keyDetails, nil
 }
 
 func (h *ibmCloudHelper) DeleteServiceID(iamToken, identifier string) error {

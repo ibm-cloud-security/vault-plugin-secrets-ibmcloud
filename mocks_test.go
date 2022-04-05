@@ -135,6 +135,21 @@ func (mr *MockiamHelperMockRecorder) DeleteServiceID(iamToken, identifier interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteServiceID", reflect.TypeOf((*MockiamHelper)(nil).DeleteServiceID), iamToken, identifier)
 }
 
+// GetAPIKeyDetails mocks base method.
+func (m *MockiamHelper) GetAPIKeyDetails(iamToken, apiKeyValue string) (*APIKeyDetailsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAPIKeyDetails", iamToken, apiKeyValue)
+	ret0, _ := ret[0].(*APIKeyDetailsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAPIKeyDetails indicates an expected call of GetAPIKeyDetails.
+func (mr *MockiamHelperMockRecorder) GetAPIKeyDetails(iamToken, apiKeyValue interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAPIKeyDetails", reflect.TypeOf((*MockiamHelper)(nil).GetAPIKeyDetails), iamToken, apiKeyValue)
+}
+
 // Init mocks base method.
 func (m *MockiamHelper) Init(iamEndpoint string) {
 	m.ctrl.T.Helper()

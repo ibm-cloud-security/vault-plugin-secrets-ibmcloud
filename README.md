@@ -45,16 +45,29 @@ the plugin executable from source.
 
     To configure a role that uses an existing service ID:
     ```shell script
-   $ vault write ibmcloud/roles/myRole service_id=ServiceId-123456dbd-de02-4435-86ce-123456789abc
-   Success! Data written to: ibmcloud/roles/myRole
+    $ vault write ibmcloud/roles/myRole service_id=ServiceId-123456dbd-de02-4435-86ce-123456789abc
+    Success! Data written to: ibmcloud/roles/myRole
     ```
    
    To configure a role that uses existing access groups:
    ```shell script
-      $ vault write ibmcloud/roles/myRole access_group_ids=AccessGroupId-43f12338-fc2c-41cd-b4f9-14eff0cbeb47,AccessGroupId-43f12111-fc2c-41cd-b4f9-14eff0cbeb21
-      Success! Data written to: ibmcloud/roles/myRole
+   $ vault write ibmcloud/roles/myRole access_group_ids=AccessGroupId-43f12338-fc2c-41cd-b4f9-14eff0cbeb47,AccessGroupId-43f12111-fc2c-41cd-b4f9-14eff0cbeb21
+   Success! Data written to: ibmcloud/roles/myRole
    ```
    **There is a limit of 10 access groups per role.**
+
+5. (Optional) Rotate the configured API key
+
+    The API provided in the initial configuration can be rotated. This creates a new API key in IBM Cloud, updates the secret engine configuration,
+    and deletes the currently configured API key from IBM Cloud.
+
+    ```shell script
+    $ vault write -f ibmcloud/config/rotate-root
+
+      Key          Value
+      ---          -----
+      apikey_id    ApiKey-2a3984a6-f855-4c69-893d-491d32228c17
+    ```
 
 ## Usage
 After the secrets engine is configured and a user/machine has a Vault token with the proper permission,
@@ -161,6 +174,38 @@ $ curl \
   },
   "...": "..."
 
+}
+```
+
+## Rotate Root Credentials
+
+Rotates the IBM Cloud API key used by Vault for this mount. A new key will be generated
+for same user or service ID and account as the existing API key. The configuration is updated
+and then the old API key is deleted.
+
+The ID of the new API key is returned in the response.
+
+
+| Method   | Path |
+|----------|-------------------------------------------------|
+| `POST`   |  `/ibmcloud/config/rotate-root`                 |
+
+
+### Sample Request
+```shell script
+$ curl \
+    --header "X-Vault-Token: ..." \
+    --request POST \
+    https://127.0.0.1:8200/v1/ibmcloud/config/rotate-root
+```
+
+### Sample Response
+```json
+{
+  "data": {
+    "apikey_id": "ApiKey-0abbbbbb-21cc-4dcc-a9cc-b59bc15c7aa1"
+  },
+  "...": "..."
 }
 ```
 
