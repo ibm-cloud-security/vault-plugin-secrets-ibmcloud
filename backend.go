@@ -43,6 +43,7 @@ func backend(c *logical.BackendConfig) *ibmCloudSecretBackend {
 		Paths: framework.PathAppend(
 			[]*framework.Path{
 				pathConfig(b),
+				pathConfigRotateRoot(b),
 				pathSecretServiceIDKey(b),
 			},
 			pathsRoles(b),
