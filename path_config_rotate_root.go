@@ -84,7 +84,7 @@ func (b *ibmCloudSecretBackend) pathConfigRotateRootWrite(ctx context.Context, r
 
 	return &logical.Response{
 		Data: map[string]interface{}{
-			"apikey_id": newAPIKey.ID,
+			apiKeyID: newAPIKey.ID,
 		},
 	}, nil
 }

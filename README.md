@@ -203,7 +203,7 @@ $ curl \
 ```json
 {
   "data": {
-    "apikey_id": "ApiKey-0abbbbbb-21cc-4dcc-a9cc-b59bc15c7aa1"
+    "api_key_id": "ApiKey-0abbbbbb-21cc-4dcc-a9cc-b59bc15c7aa1"
   },
   "...": "..."
 }
