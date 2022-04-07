@@ -346,6 +346,8 @@ func getMockedBackendStaticServiceID(t *testing.T, ctrl *gomock.Controller, call
 	// for the IBM Cloud API calls calls.
 	mockHelper.EXPECT().ObtainToken("adminKey").Return(adminToken, nil)
 	mockHelper.EXPECT().VerifyToken(gomock.Any(), adminToken).Return(&tokenInfo{Expiry: time.Now().Add(time.Hour)}, nil)
+	mockHelper.EXPECT().GetAPIKeyDetails("AdminToken", "adminKey").
+		Return(&APIKeyDetailsResponse{ID: "oldID", IAMID: "testIAMID", AccountID: "theAccountID"}, nil)
 
 	// Mock for create / update of the test role and the look up of the service ID's IAM ID
 	mockHelper.EXPECT().CheckServiceIDAccount(adminToken, gomock.Any(), "theAccountID").
@@ -401,6 +403,8 @@ func getMockedBackendDynamicServiceID(t *testing.T, ctrl *gomock.Controller, cal
 	// for the IBM Cloud API calls calls.
 	mockHelper.EXPECT().ObtainToken("adminKey").Return(adminToken, nil)
 	mockHelper.EXPECT().VerifyToken(gomock.Any(), adminToken).Return(&tokenInfo{Expiry: time.Now().Add(time.Hour)}, nil)
+	mockHelper.EXPECT().GetAPIKeyDetails("AdminToken", "adminKey").
+		Return(&APIKeyDetailsResponse{ID: "oldID", IAMID: "testIAMID", AccountID: "theAccountID"}, nil)
 
 	// Mock for create / update of the test role and the look up of the service ID's IAM ID
 	mockHelper.EXPECT().VerifyAccessGroupExists(adminToken, gomock.Any(), "theAccountID").
@@ -476,6 +480,8 @@ func getMockedBackendStaticServiceIDDeleteTest(t *testing.T, ctrl *gomock.Contro
 	// for the IBM Cloud API calls calls.
 	mockHelper.EXPECT().ObtainToken("adminKey").Return(adminToken, nil)
 	mockHelper.EXPECT().VerifyToken(gomock.Any(), adminToken).Return(&tokenInfo{Expiry: time.Now().Add(time.Hour)}, nil)
+	mockHelper.EXPECT().GetAPIKeyDetails("AdminToken", "adminKey").
+		Return(&APIKeyDetailsResponse{ID: "oldID", IAMID: "testIAMID", AccountID: "theAccountID"}, nil)
 
 	// Mock for create of the test role
 	mockHelper.EXPECT().CheckServiceIDAccount(adminToken, gomock.Any(), "theAccountID").

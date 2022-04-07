@@ -26,10 +26,12 @@ func TestConfigRotateRootSuccess(t *testing.T) {
 
 	mockHelper.EXPECT().ObtainToken("adminKey").Return("AdminToken", nil)
 	mockHelper.EXPECT().VerifyToken(gomock.Any(), "AdminToken").Return(&tokenInfo{Expiry: time.Now().Add(time.Hour)}, nil)
+	mockHelper.EXPECT().GetAPIKeyDetails("AdminToken", "adminKey").
+		Return(&APIKeyDetailsResponse{ID: "oldID", IAMID: "testIAMID", AccountID: "theAccountID"}, nil)
 
 	mockHelper.EXPECT().GetAPIKeyDetails("AdminToken", "adminKey").
-		Return(&APIKeyDetailsResponse{ID: "oldID", IAMID: "testIAMID", AccountID: "testAccountID"}, nil)
-	mockHelper.EXPECT().CreateAPIKey("AdminToken", "testIAMID", "testAccountID", gomock.Any(), gomock.Any()).
+		Return(&APIKeyDetailsResponse{ID: "oldID", IAMID: "testIAMID", AccountID: "theAccountID"}, nil)
+	mockHelper.EXPECT().CreateAPIKey("AdminToken", "testIAMID", "theAccountID", gomock.Any(), gomock.Any()).
 		Return(&APIKeyV1Response{APIKey: "newKeyVal", ID: "newKeyID"}, nil)
 
 	mockHelper.EXPECT().Cleanup()
@@ -95,10 +97,12 @@ func TestRotateCreateFails(t *testing.T) {
 
 	mockHelper.EXPECT().ObtainToken("adminKey").Return("AdminToken", nil)
 	mockHelper.EXPECT().VerifyToken(gomock.Any(), "AdminToken").Return(&tokenInfo{Expiry: time.Now().Add(time.Hour)}, nil)
+	mockHelper.EXPECT().GetAPIKeyDetails("AdminToken", "adminKey").
+		Return(&APIKeyDetailsResponse{ID: "oldID", IAMID: "testIAMID", AccountID: "theAccountID"}, nil)
 
 	mockHelper.EXPECT().GetAPIKeyDetails("AdminToken", "adminKey").
-		Return(&APIKeyDetailsResponse{ID: "oldID", IAMID: "testIAMID", AccountID: "testAccountID"}, nil)
-	mockHelper.EXPECT().CreateAPIKey("AdminToken", "testIAMID", "testAccountID", gomock.Any(), gomock.Any()).
+		Return(&APIKeyDetailsResponse{ID: "oldID", IAMID: "testIAMID", AccountID: "theAccountID"}, nil)
+	mockHelper.EXPECT().CreateAPIKey("AdminToken", "testIAMID", "theAccountID", gomock.Any(), gomock.Any()).
 		Return(nil, fmt.Errorf("intentional CreateAPIKey mock failure"))
 
 	b, s := testBackend(t)
@@ -156,10 +160,12 @@ func TestRotateDeleteKeyFails(t *testing.T) {
 
 	mockHelper.EXPECT().ObtainToken("adminKey").Return("AdminToken", nil)
 	mockHelper.EXPECT().VerifyToken(gomock.Any(), "AdminToken").Return(&tokenInfo{Expiry: time.Now().Add(time.Hour)}, nil)
+	mockHelper.EXPECT().GetAPIKeyDetails("AdminToken", "adminKey").
+		Return(&APIKeyDetailsResponse{ID: "oldID", IAMID: "testIAMID", AccountID: "theAccountID"}, nil)
 
 	mockHelper.EXPECT().GetAPIKeyDetails("AdminToken", "adminKey").
-		Return(&APIKeyDetailsResponse{ID: "oldID", IAMID: "testIAMID", AccountID: "testAccountID"}, nil)
-	mockHelper.EXPECT().CreateAPIKey("AdminToken", "testIAMID", "testAccountID", gomock.Any(), gomock.Any()).
+		Return(&APIKeyDetailsResponse{ID: "oldID", IAMID: "testIAMID", AccountID: "theAccountID"}, nil)
+	mockHelper.EXPECT().CreateAPIKey("AdminToken", "testIAMID", "theAccountID", gomock.Any(), gomock.Any()).
 		Return(&APIKeyV1Response{APIKey: "newKeyVal", ID: "newKeyID"}, nil)
 
 	mockHelper.EXPECT().Cleanup()
