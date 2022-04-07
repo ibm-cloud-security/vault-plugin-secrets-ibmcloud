@@ -11,15 +11,6 @@ import (
 	"github.com/hashicorp/vault/sdk/logical"
 )
 
-/* TODO test
-	X test happy path
-
-    test before config is set
-    test with no API key set
-  	X  test with API key creation failure
-    x test with API key deletion failure
-
-*/
 func TestConfigRotateRootSuccess(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
@@ -223,20 +214,8 @@ func TestRotateDeleteKeyFails(t *testing.T) {
 }
 
 func TestConfigRotateNoConfigSet(t *testing.T) {
-	// Test when the config has not yet been set. This also covers the case where the key has been set to empty
-	// in the config. The obtaining the admin token will fail in this case.
-	t.Parallel()
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockHelper := NewMockiamHelper(ctrl)
-
-	mockHelper.EXPECT().ObtainToken("adminKey").
-		Return("", fmt.Errorf("obtain token failure"))
-
+	// Test with no config set
 	b, s := testBackend(t)
-
-	b.iamHelper = mockHelper
 
 	// Rotate the key
 	resp, err := b.HandleRequest(context.Background(), &logical.Request{
@@ -244,16 +223,39 @@ func TestConfigRotateNoConfigSet(t *testing.T) {
 		Path:      "config/rotate-root",
 		Storage:   s,
 	})
-	// Verify the expected obtain token failure is received
-	if resp != nil {
-		t.Fatalf("error: received a response when none was expected: %v", resp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expectedMsg := "no API key was set in the configuration"
+	if resp == nil {
+		t.Fatalf("expected an error response on rotation but did not receive one")
+	} else if !strings.Contains(resp.Error().Error(), expectedMsg) {
+		t.Fatalf("expected message \"%s\" to be in error: %v", expectedMsg, resp.Error())
 	}
 
-	if err == nil {
-		t.Fatalf("error: did not receive an error from the rotation as expected")
+	// Test when the key is set to the empty string
+	var configData = map[string]interface{}{
+		apiKeyField:    "",
+		accountIDField: "",
+	}
+	err = testConfigCreate(t, b, s, configData)
+	if err != nil {
+		t.Fatal("error configuring the backend")
 	}
 
-	if err.Error() != "obtain token failure" {
-		t.Fatalf("error: did not receive the expected error message. Received this instead %s", err.Error())
+	// Rotate the key
+	resp, err = b.HandleRequest(context.Background(), &logical.Request{
+		Operation: logical.UpdateOperation,
+		Path:      "config/rotate-root",
+		Storage:   s,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if resp == nil {
+		t.Fatalf("expected an error response on rotation but did not receive one")
+	} else if !strings.Contains(resp.Error().Error(), expectedMsg) {
+		t.Fatalf("expected message \"%s\" to be in error: %v", expectedMsg, resp.Error())
 	}
 }
