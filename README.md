@@ -6,7 +6,7 @@ the plugin can dynamically create it and assign it membership in a set of IBM Cl
 users to gain access to IBM Cloud resources without needing to create or manage dedicated service IDs. 
 
 ## Versions
-This version of the plugin was tested with Vault 1.6.0.
+This version of the plugin was tested with Vault 1.9.4.
 
 ## Setup
 
@@ -115,6 +115,8 @@ Configures the secret engine must done before API keys can be generated.
 * `api_key (string: <required>)` - An API key for a service ID or user with the permissions noted above.
 * `account_id (string: <required>)` - The ID of the account that contains the access groups and/or service ID used for
 API key generation.
+* `iam_endpoint (string: <optional>)` - The custom or private IAM endpoint. For example `https://private.iam.cloud.ibm.com`.
+If unspecified the public endpoint, `https://iam.cloud.ibm.com`, is used.
 
 ### Sample Payload
 
@@ -154,7 +156,8 @@ $ curl \
 {
   "data": {
     "api_key": "<redacted>",
-    "account_id": "abd85726cbd..."
+    "account_id": "abd85726cbd...",
+    "iam_endpoint": "https://iam.cloud.ibm.com"
   },
   "...": "..."
 

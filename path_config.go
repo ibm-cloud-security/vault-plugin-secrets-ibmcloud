@@ -2,6 +2,7 @@ package ibmcloudsecrets
 
 import (
 	"context"
+
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
 )
@@ -17,6 +18,10 @@ func pathConfig(b *ibmCloudSecretBackend) *framework.Path {
 			accountIDField: {
 				Type:        framework.TypeString,
 				Description: "The account ID.",
+			},
+			iamEndpointField: {
+				Type:        framework.TypeString,
+				Description: "The custom or private IAM endpoint.",
 			},
 		},
 		ExistenceCheck: b.pathConfigExistenceCheck,
@@ -40,8 +45,9 @@ func pathConfig(b *ibmCloudSecretBackend) *framework.Path {
 }
 
 type ibmCloudConfig struct {
-	APIKey  string `json:"api_key"`
-	Account string `json:"account"`
+	APIKey      string `json:"api_key"`
+	Account     string `json:"account"`
+	IAMEndpoint string `json:"iam_endpoint"`
 }
 
 func (b *ibmCloudSecretBackend) config(ctx context.Context, s logical.Storage) (*ibmCloudConfig, error) {
@@ -91,6 +97,13 @@ func (b *ibmCloudSecretBackend) pathConfigWrite(ctx context.Context, req *logica
 		return logical.ErrorResponse("the required field %s is missing", accountIDField), nil
 	}
 
+	iamEndpoint, ok := data.GetOk(iamEndpointField)
+	if ok {
+		config.IAMEndpoint = iamEndpoint.(string)
+	} else {
+		config.IAMEndpoint = iamEndpointFieldDefault
+	}
+
 	entry, err := logical.StorageEntryJSON("config", config)
 	if err != nil {
 		return nil, err
@@ -121,8 +134,9 @@ func (b *ibmCloudSecretBackend) pathConfigRead(ctx context.Context, req *logical
 
 	resp := &logical.Response{
 		Data: map[string]interface{}{
-			apiKeyField:    displayKey,
-			accountIDField: config.Account,
+			apiKeyField:      displayKey,
+			accountIDField:   config.Account,
+			iamEndpointField: config.IAMEndpoint,
 		},
 	}
 	return resp, nil
