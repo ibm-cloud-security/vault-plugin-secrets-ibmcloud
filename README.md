@@ -58,7 +58,7 @@ the plugin executable from source.
 
 5. (Optional) Rotate the configured API key
 
-    The API provided in the initial configuration can be rotated. This creates a new API key in IBM Cloud, updates the secret engine configuration,
+    The API key provided in the initial configuration can be rotated. This creates a new API key in IBM Cloud, updates the secret engine configuration,
     and deletes the currently configured API key from IBM Cloud.
 
     ```shell script
