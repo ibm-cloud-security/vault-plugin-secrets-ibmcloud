@@ -346,6 +346,8 @@ func getMockedBackendStaticServiceID(t *testing.T, ctrl *gomock.Controller, call
 	// for the IBM Cloud API calls calls.
 	mockHelper.EXPECT().ObtainToken("adminKey").Return(adminToken, nil)
 	mockHelper.EXPECT().VerifyToken(gomock.Any(), adminToken).Return(&tokenInfo{Expiry: time.Now().Add(time.Hour)}, nil)
+	mockHelper.EXPECT().GetAPIKeyDetails("AdminToken", "adminKey").
+		Return(&APIKeyDetailsResponse{ID: "oldID", IAMID: "testIAMID", AccountID: "theAccountID"}, nil)
 
 	// Mock for create / update of the test role and the look up of the service ID's IAM ID
 	mockHelper.EXPECT().CheckServiceIDAccount(adminToken, gomock.Any(), "theAccountID").
@@ -357,9 +359,17 @@ func getMockedBackendStaticServiceID(t *testing.T, ctrl *gomock.Controller, call
 			return &serviceIDv1Response{ID: "serviceID1", IAMID: fmt.Sprintf("%s_iam", serviceID)}, nil
 		})
 
-	mockHelper.EXPECT().CreateAPIKey(adminToken, gomock.Any(), "theAccountID", "testRole").
+	mockHelper.EXPECT().CreateAPIKey(adminToken, gomock.Any(), "theAccountID", gomock.Any(), gomock.Any()).
 		Times(callCount["CreateAPIKey"]).
-		DoAndReturn(func(iamToken, iamID, accountID, roleName string) (*APIKeyV1Response, error) {
+		DoAndReturn(func(iamToken, iamID, accountID, name, description string) (*APIKeyV1Response, error) {
+			roleName := "testRole"
+			if !strings.Contains(name, roleName) {
+				t.Fatalf("expected %s to be in the key name %s", roleName, name)
+			}
+			if !strings.Contains(description, roleName) {
+				t.Fatalf("expected %s to be in the key description %s", roleName, description)
+			}
+
 			if iamID == "keyFailureGetUser_iam" {
 				return nil, fmt.Errorf("intentional CreateAPIKey mock failure")
 			}
@@ -393,6 +403,8 @@ func getMockedBackendDynamicServiceID(t *testing.T, ctrl *gomock.Controller, cal
 	// for the IBM Cloud API calls calls.
 	mockHelper.EXPECT().ObtainToken("adminKey").Return(adminToken, nil)
 	mockHelper.EXPECT().VerifyToken(gomock.Any(), adminToken).Return(&tokenInfo{Expiry: time.Now().Add(time.Hour)}, nil)
+	mockHelper.EXPECT().GetAPIKeyDetails("AdminToken", "adminKey").
+		Return(&APIKeyDetailsResponse{ID: "oldID", IAMID: "testIAMID", AccountID: "theAccountID"}, nil)
 
 	// Mock for create / update of the test role and the look up of the service ID's IAM ID
 	mockHelper.EXPECT().VerifyAccessGroupExists(adminToken, gomock.Any(), "theAccountID").
@@ -424,15 +436,21 @@ func getMockedBackendDynamicServiceID(t *testing.T, ctrl *gomock.Controller, cal
 			return nil
 		})
 
-	mockHelper.EXPECT().CreateAPIKey(adminToken, "createdServiceID_iam", "theAccountID", gomock.Any()).
+	mockHelper.EXPECT().CreateAPIKey(adminToken, "createdServiceID_iam", "theAccountID", gomock.Any(), gomock.Any()).
 		Times(callCount["CreateAPIKey"]).
-		DoAndReturn(func(iamToken, iamID, accountID, roleName string) (*APIKeyV1Response, error) {
-			if roleName == "testRole" {
+		DoAndReturn(func(iamToken, iamID, accountID, name, description string) (*APIKeyV1Response, error) {
+			if strings.Contains(name, "testRole") {
+				if !strings.Contains(description, "testRole") {
+					t.Fatalf("expected %s to be in the key description %s", "testRole", description)
+				}
 				return &APIKeyV1Response{ID: "apiKeyID", APIKey: "theAPIKey"}, nil
-			} else if roleName == "APIKeyErrorRole" {
+			} else if strings.Contains(name, "APIKeyErrorRole") {
+				if !strings.Contains(description, "APIKeyErrorRole") {
+					t.Fatalf("expected %s to be in the key description %s", "APIKeyErrorRole", description)
+				}
 				return nil, fmt.Errorf("intentional test error from mock CreateAPIKey")
 			} else {
-				return nil, fmt.Errorf("unexpected role name in CreateAPIKey: %s", roleName)
+				return nil, fmt.Errorf("unexpected key name in CreateAPIKey mock: %s", name)
 			}
 		})
 
@@ -462,6 +480,8 @@ func getMockedBackendStaticServiceIDDeleteTest(t *testing.T, ctrl *gomock.Contro
 	// for the IBM Cloud API calls calls.
 	mockHelper.EXPECT().ObtainToken("adminKey").Return(adminToken, nil)
 	mockHelper.EXPECT().VerifyToken(gomock.Any(), adminToken).Return(&tokenInfo{Expiry: time.Now().Add(time.Hour)}, nil)
+	mockHelper.EXPECT().GetAPIKeyDetails("AdminToken", "adminKey").
+		Return(&APIKeyDetailsResponse{ID: "oldID", IAMID: "testIAMID", AccountID: "theAccountID"}, nil)
 
 	// Mock for create of the test role
 	mockHelper.EXPECT().CheckServiceIDAccount(adminToken, gomock.Any(), "theAccountID").

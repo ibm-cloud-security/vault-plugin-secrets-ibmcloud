@@ -430,8 +430,9 @@ func getMockedBackend(t *testing.T, ctrl *gomock.Controller, minCalls map[string
 	// For the adminKey we always return AdminToken, this lets enforce that the code is correctly using the admin token
 	// for the IBM Cloud API calls calls.
 	mockHelper.EXPECT().ObtainToken("adminKey").Return("AdminToken", nil)
-
 	mockHelper.EXPECT().VerifyToken(gomock.Any(), "AdminToken").Return(&tokenInfo{Expiry: time.Now().Add(time.Hour)}, nil)
+	mockHelper.EXPECT().GetAPIKeyDetails("AdminToken", "adminKey").
+		Return(&APIKeyDetailsResponse{ID: "oldID", IAMID: "testIAMID", AccountID: "theAccountID"}, nil)
 
 	mockHelper.EXPECT().VerifyAccessGroupExists("AdminToken", gomock.Any(), "theAccountID").
 		MinTimes(minCalls["VerifyAccessGroupExists"]).DoAndReturn(func(iamToken, group, accountID string) *logical.Response {

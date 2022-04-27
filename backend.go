@@ -3,6 +3,7 @@ package ibmcloudsecrets
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -43,6 +44,7 @@ func backend(c *logical.BackendConfig) *ibmCloudSecretBackend {
 		Paths: framework.PathAppend(
 			[]*framework.Path{
 				pathConfig(b),
+				pathConfigRotateRoot(b),
 				pathSecretServiceIDKey(b),
 			},
 			pathsRoles(b),
@@ -128,6 +130,20 @@ func (b *ibmCloudSecretBackend) getAdminToken(ctx context.Context, s logical.Sto
 	if resp != nil {
 		return "", resp.Error()
 	}
+
+	// Verify the configured admin API key is for the same account that is configured for the engine
+	apiKeyDetails, err := iam.GetAPIKeyDetails(token, config.APIKey)
+	if err != nil {
+		b.Logger().Error("error obtaining details about the configured admin API key", "error", err)
+		return "", err
+	}
+
+	if apiKeyDetails.AccountID != config.Account {
+		err = fmt.Errorf("error: the account of the configured API key, %s, does not match the account in the configuration: %s", apiKeyDetails.AccountID, config.Account)
+		b.Logger().Error("error: configuration account mismatch", "error", err)
+		return "", err
+	}
+
 	b.adminToken = token
 	b.adminTokenExpiry = adminTokenInfo.Expiry
 	return b.adminToken, nil
