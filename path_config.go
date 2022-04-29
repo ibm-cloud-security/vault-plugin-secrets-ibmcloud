@@ -132,6 +132,10 @@ func (b *ibmCloudSecretBackend) pathConfigRead(ctx context.Context, req *logical
 		displayKey = redacted
 	}
 
+	if config.IAMEndpoint == "" {
+		config.IAMEndpoint = iamEndpointFieldDefault
+	}
+
 	resp := &logical.Response{
 		Data: map[string]interface{}{
 			apiKeyField:      displayKey,
@@ -164,6 +168,9 @@ func (b *ibmCloudSecretBackend) getConfig(ctx context.Context, s logical.Storage
 	}
 	if config.Account == "" {
 		return nil, logical.ErrorResponse("no account ID was set in the configuration")
+	}
+	if config.IAMEndpoint == "" {
+		config.IAMEndpoint = iamEndpointFieldDefault
 	}
 
 	return config, nil
