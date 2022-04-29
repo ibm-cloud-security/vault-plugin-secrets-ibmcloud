@@ -152,7 +152,7 @@ func testConfigCreate(t *testing.T, b *ibmCloudSecretBackend, s logical.Storage,
 func TestLoadOfPreviousConfig(t *testing.T) {
 	b, s := testBackend(t)
 
-	// set config without endpoint defaults set, mimicing a v0.1.0 config
+	// set config without endpoint defaults set, mimicking a v0.1.0 config
 	config, err := b.config(context.Background(), s)
 	if err != nil {
 		t.Fatal(err)
