@@ -148,3 +148,36 @@ func testConfigCreate(t *testing.T, b *ibmCloudSecretBackend, s logical.Storage,
 	}
 	return nil
 }
+
+func TestLoadOfPreviousConfig(t *testing.T) {
+	b, s := testBackend(t)
+
+	// set config without endpoint default set, mimicking a v0.1.0 config
+	config, err := b.config(context.Background(), s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if config == nil {
+		config = new(ibmCloudConfig)
+	}
+	config.APIKey = "key"
+	config.Account = "account"
+
+	entry, err := logical.StorageEntryJSON("config", config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Put(context.Background(), entry); err != nil {
+		t.Fatal(err)
+	}
+
+	// Load the config and verify the endpoints are defaulted
+	newConfig, resp := b.getConfig(context.Background(), s)
+	if resp != nil {
+		t.Fatal(resp.Error())
+	}
+
+	if newConfig.IAMEndpoint != iamEndpointFieldDefault {
+		t.Fatalf("The config's IAM Endpoint was not defaulted correctly on the load of a previous version config")
+	}
+}
