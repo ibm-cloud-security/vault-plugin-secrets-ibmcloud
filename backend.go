@@ -177,5 +177,10 @@ func (b *ibmCloudSecretBackend) getIAMHelper(ctx context.Context, s logical.Stor
 }
 
 const backendHelp = `
-The IBM Cloud backend plugin allows authentication for IBM Public Cloud.
+The IBM Cloud secrets engine dynamically generates API keys based
+on predefined IAM access groups or service IDs.
+
+After mounting this secret engine you can configure it using the
+"config/" endpoints. Roles which map to service IDs or access 
+groups can be configured using the "roles/" endpoints.
 `
