@@ -3,7 +3,7 @@ module vault-plugin-secrets-ibmcloud
 go 1.16
 
 require (
-	github.com/coreos/go-oidc/v3 v3.1.0
+	github.com/coreos/go-oidc/v3 v3.2.0
 	github.com/golang/mock v1.6.0
 	github.com/hashicorp/errwrap v1.0.0
 	github.com/hashicorp/go-cleanhttp v0.5.1

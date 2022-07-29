@@ -32,8 +32,10 @@ const (
 	v1APIKeys          = "/v1/apikeys"
 	v1APIKeysID        = v1APIKeys + "/%s"
 	v1APIKeyDetails    = "/v1/apikeys/details"
-	identity           = "/identity"
 	identityToken      = "/identity/token"
+	// IAM OIDC provider paths
+	authorizationEndpoint = "/identity/authorize"
+	jwksURI               = "/identity/keys"
 )
 
 type accountIDDeserializer struct {
@@ -125,20 +127,27 @@ func (h *ibmCloudHelper) getProvider() (*oidc.Provider, error) {
 		return h.provider, nil
 	}
 
-	identityURL := h.getURL(identity)
 	providerCtx := h.providerCtx
 
-	// Use the InsecureIssuerURLContext if the idenity URL does not equal the issuer
-	// URL. This is the case with IBM Cloud private endpoints.
-	if identityURL != openIDIssuer {
-		providerCtx = oidc.InsecureIssuerURLContext(h.providerCtx, openIDIssuer)
+	// // Use the InsecureIssuerURLContext if the idenity URL does not equal the issuer
+	// // URL. This is the case with IBM Cloud private endpoints.
+	// if identityURL != openIDIssuer {
+	// 	providerCtx = oidc.InsecureIssuerURLContext(h.providerCtx, openIDIssuer)
+	// }
+
+	// provider, err := oidc.NewProvider(providerCtx, identityURL)
+	// if err != nil {
+	// 	return nil, errwrap.Wrapf("error creating provider with given values: {{err}}", err)
+	// }
+
+	providerConfig := oidc.ProviderConfig{
+		IssuerURL: openIDIssuer,
+		AuthURL:   h.getURL(authorizationEndpoint),
+		TokenURL:  h.getURL(identityToken),
+		JWKSURL:   h.getURL(jwksURI),
 	}
 
-	provider, err := oidc.NewProvider(providerCtx, identityURL)
-	if err != nil {
-		return nil, errwrap.Wrapf("error creating provider with given values: {{err}}", err)
-	}
-
+	provider := providerConfig.NewProvider(providerCtx)
 	h.provider = provider
 	return provider, nil
 }
