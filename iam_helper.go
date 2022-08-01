@@ -129,17 +129,6 @@ func (h *ibmCloudHelper) getProvider() (*oidc.Provider, error) {
 
 	providerCtx := h.providerCtx
 
-	// // Use the InsecureIssuerURLContext if the idenity URL does not equal the issuer
-	// // URL. This is the case with IBM Cloud private endpoints.
-	// if identityURL != openIDIssuer {
-	// 	providerCtx = oidc.InsecureIssuerURLContext(h.providerCtx, openIDIssuer)
-	// }
-
-	// provider, err := oidc.NewProvider(providerCtx, identityURL)
-	// if err != nil {
-	// 	return nil, errwrap.Wrapf("error creating provider with given values: {{err}}", err)
-	// }
-
 	providerConfig := oidc.ProviderConfig{
 		IssuerURL: openIDIssuer,
 		AuthURL:   h.getURL(authorizationEndpoint),
