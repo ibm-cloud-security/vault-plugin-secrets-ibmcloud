@@ -5,9 +5,6 @@ This plugin dynamically generates API keys for IBM Cloud service IDs. The servic
 the plugin can dynamically create it and assign it membership in a set of IBM Cloud access groups. This enables
 users to gain access to IBM Cloud resources without needing to create or manage dedicated service IDs. 
 
-## Versions
-This version of the plugin was tested with Vault 1.9.4.
-
 ## Setup
 
 1. Download a release of the plugin or build it from source. Follow the steps in [Developing](#Developing) to build
