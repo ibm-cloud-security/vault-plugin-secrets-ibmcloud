@@ -110,13 +110,13 @@ func (h *ibmCloudHelper) Cleanup() {
 	h.providerLock.Unlock()
 }
 
-func (h *ibmCloudHelper) getProvider() (*oidc.Provider, error) {
+func (h *ibmCloudHelper) getProvider() *oidc.Provider {
 	h.providerLock.RLock()
 	unlockFunc := h.providerLock.RUnlock
 	defer func() { unlockFunc() }()
 
 	if h.provider != nil {
-		return h.provider, nil
+		return h.provider
 	}
 
 	h.providerLock.RUnlock()
@@ -124,7 +124,7 @@ func (h *ibmCloudHelper) getProvider() (*oidc.Provider, error) {
 	unlockFunc = h.providerLock.Unlock
 
 	if h.provider != nil {
-		return h.provider, nil
+		return h.provider
 	}
 
 	providerCtx := h.providerCtx
@@ -138,7 +138,7 @@ func (h *ibmCloudHelper) getProvider() (*oidc.Provider, error) {
 
 	provider := providerConfig.NewProvider(providerCtx)
 	h.provider = provider
-	return provider, nil
+	return provider
 }
 
 /**
@@ -180,10 +180,7 @@ with relevant items contained in the token.
 */
 func (h *ibmCloudHelper) VerifyToken(ctx context.Context, token string) (*tokenInfo, *logical.Response) {
 	// verify the token
-	provider, err := h.getProvider()
-	if err != nil {
-		return nil, logical.ErrorResponse("an error occurred retreiving the OIDC provider: %s", err)
-	}
+	provider := h.getProvider()
 
 	oidcConfig := &oidc.Config{
 		SkipClientIDCheck: true,
