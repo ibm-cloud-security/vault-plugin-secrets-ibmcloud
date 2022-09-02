@@ -23,6 +23,10 @@ func pathConfig(b *ibmCloudSecretBackend) *framework.Path {
 				Type:        framework.TypeString,
 				Description: "The custom or private IAM endpoint.",
 			},
+			resourceControllerEndpointField: {
+				Type:        framework.TypeString,
+				Description: "The custom or private Resource Controller endpoint.",
+			},
 		},
 		ExistenceCheck: b.pathConfigExistenceCheck,
 		Operations: map[logical.Operation]framework.OperationHandler{
@@ -45,9 +49,10 @@ func pathConfig(b *ibmCloudSecretBackend) *framework.Path {
 }
 
 type ibmCloudConfig struct {
-	APIKey      string `json:"api_key"`
-	Account     string `json:"account"`
-	IAMEndpoint string `json:"iam_endpoint"`
+	APIKey                     string `json:"api_key"`
+	Account                    string `json:"account"`
+	IAMEndpoint                string `json:"iam_endpoint"`
+	ResourceControllerEndpoint string `json:"resource_controller_endpoint"`
 }
 
 func (b *ibmCloudSecretBackend) config(ctx context.Context, s logical.Storage) (*ibmCloudConfig, error) {
@@ -101,7 +106,14 @@ func (b *ibmCloudSecretBackend) pathConfigWrite(ctx context.Context, req *logica
 	if ok {
 		config.IAMEndpoint = iamEndpoint.(string)
 	} else {
-		config.IAMEndpoint = iamEndpointFieldDefault
+		config.IAMEndpoint = iamEndpointDefault
+	}
+
+	resCtrlEndpoint, ok := data.GetOk(resourceControllerEndpointField)
+	if ok {
+		config.ResourceControllerEndpoint = resCtrlEndpoint.(string)
+	} else {
+		config.ResourceControllerEndpoint = resourceControllerEndpointDefault
 	}
 
 	entry, err := logical.StorageEntryJSON("config", config)
@@ -133,14 +145,19 @@ func (b *ibmCloudSecretBackend) pathConfigRead(ctx context.Context, req *logical
 	}
 
 	if config.IAMEndpoint == "" {
-		config.IAMEndpoint = iamEndpointFieldDefault
+		config.IAMEndpoint = iamEndpointDefault
+	}
+
+	if config.ResourceControllerEndpoint == "" {
+		config.IAMEndpoint = resourceControllerEndpointDefault
 	}
 
 	resp := &logical.Response{
 		Data: map[string]interface{}{
-			apiKeyField:      displayKey,
-			accountIDField:   config.Account,
-			iamEndpointField: config.IAMEndpoint,
+			apiKeyField:                     displayKey,
+			accountIDField:                  config.Account,
+			iamEndpointField:                config.IAMEndpoint,
+			resourceControllerEndpointField: config.ResourceControllerEndpoint,
 		},
 	}
 	return resp, nil
@@ -170,7 +187,10 @@ func (b *ibmCloudSecretBackend) getConfig(ctx context.Context, s logical.Storage
 		return nil, logical.ErrorResponse("no account ID was set in the configuration")
 	}
 	if config.IAMEndpoint == "" {
-		config.IAMEndpoint = iamEndpointFieldDefault
+		config.IAMEndpoint = iamEndpointDefault
+	}
+	if config.ResourceControllerEndpoint == "" {
+		config.ResourceControllerEndpoint = resourceControllerEndpointDefault
 	}
 
 	return config, nil

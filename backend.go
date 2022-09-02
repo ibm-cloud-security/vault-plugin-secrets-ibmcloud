@@ -25,7 +25,7 @@ type ibmCloudSecretBackend struct {
 	adminTokenLock   sync.RWMutex
 	adminToken       string
 	adminTokenExpiry time.Time
-	iamHelper        iamHelper
+	apiHelper        apiHelper
 	iamHelperLock    sync.RWMutex
 }
 
@@ -81,9 +81,9 @@ func (b *ibmCloudSecretBackend) reset() {
 	defer func() { unlockIAMFunc() }()
 
 	b.iamHelperLock.Lock()
-	if b.iamHelper != nil {
-		b.iamHelper.Cleanup()
-		b.iamHelper = nil
+	if b.apiHelper != nil {
+		b.apiHelper.Cleanup()
+		b.apiHelper = nil
 	}
 }
 
@@ -116,9 +116,9 @@ func (b *ibmCloudSecretBackend) getAdminToken(ctx context.Context, s logical.Sto
 		return "", errors.New("no API key was set in the configuration")
 	}
 
-	iam, resp := b.getIAMHelper(ctx, s)
+	iam, resp := b.getAPIHelper(ctx, s)
 	if resp != nil {
-		b.Logger().Error("failed to retrieve an IAM helper", "error", resp.Error())
+		b.Logger().Error("failed to retrieve an API helper", "error", resp.Error())
 		return "", resp.Error()
 	}
 	token, err := iam.ObtainToken(config.APIKey)
@@ -149,31 +149,31 @@ func (b *ibmCloudSecretBackend) getAdminToken(ctx context.Context, s logical.Sto
 	return b.adminToken, nil
 }
 
-func (b *ibmCloudSecretBackend) getIAMHelper(ctx context.Context, s logical.Storage) (iamHelper, *logical.Response) {
+func (b *ibmCloudSecretBackend) getAPIHelper(ctx context.Context, s logical.Storage) (apiHelper, *logical.Response) {
 	b.iamHelperLock.RLock()
 	unlockFunc := b.iamHelperLock.RUnlock
 	defer func() { unlockFunc() }()
 
-	if b.iamHelper != nil {
-		return b.iamHelper, nil
+	if b.apiHelper != nil {
+		return b.apiHelper, nil
 	}
 	b.iamHelperLock.RUnlock()
 
 	b.iamHelperLock.Lock()
 	unlockFunc = b.iamHelperLock.Unlock
 
-	if b.iamHelper != nil {
-		return b.iamHelper, nil
+	if b.apiHelper != nil {
+		return b.apiHelper, nil
 	}
 
 	config, resp := b.getConfig(ctx, s)
 	if resp != nil {
 		return nil, resp
 	}
-	b.iamHelper = new(ibmCloudHelper)
-	b.iamHelper.Init(config.IAMEndpoint)
+	b.apiHelper = new(ibmCloudHelper)
+	b.apiHelper.Init(config.IAMEndpoint, config.ResourceControllerEndpoint)
 
-	return b.iamHelper, nil
+	return b.apiHelper, nil
 }
 
 const backendHelp = `

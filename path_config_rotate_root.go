@@ -34,9 +34,9 @@ func (b *ibmCloudSecretBackend) pathConfigRotateRootWrite(ctx context.Context, r
 		return nil, errors.New("no API key was set in the configuration")
 	}
 
-	iam, resp := b.getIAMHelper(ctx, req.Storage)
+	iam, resp := b.getAPIHelper(ctx, req.Storage)
 	if resp != nil {
-		b.Logger().Error("failed to retrieve an IAM helper", "error", resp.Error())
+		b.Logger().Error("failed to retrieve an API helper", "error", resp.Error())
 		return resp, nil
 	}
 

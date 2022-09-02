@@ -43,6 +43,10 @@ func pathsRoles(b *ibmCloudSecretBackend) []*framework.Path {
 					Type:        framework.TypeString,
 					Description: `A service ID to generate API keys for.`,
 				},
+				cosInstanceGUIDField: {
+					Type:        framework.TypeString,
+					Description: `The GUID of a Cloud Object Storage instance to generate HMAC keys for.`,
+				},
 				ttlField: {
 					Type:        framework.TypeDurationSecond,
 					Description: "Default lease for generated credentials. If not set or set to 0, will use system default.",
@@ -76,11 +80,12 @@ func pathsRoles(b *ibmCloudSecretBackend) []*framework.Path {
 }
 
 type ibmCloudRole struct {
-	AccessGroupIDs []string      `json:"access_group_ids"`
-	ServiceID      string        `json:"service_id"`
-	TTL            time.Duration `json:"ttl"`
-	MaxTTL         time.Duration `json:"max_ttl"`
-	BindingHash    string        `json:"binding_hash"`
+	AccessGroupIDs  []string      `json:"access_group_ids"`
+	ServiceID       string        `json:"service_id"`
+	COSInstanceGUID string        `json:"cos_instance_guid"`
+	TTL             time.Duration `json:"ttl"`
+	MaxTTL          time.Duration `json:"max_ttl"`
+	BindingHash     string        `json:"binding_hash"`
 }
 
 func getStringHash(bindingsRaw string) string {
@@ -143,10 +148,11 @@ func (b *ibmCloudSecretBackend) pathRoleRead(ctx context.Context, req *logical.R
 	}
 
 	d := map[string]interface{}{
-		accessGroupIDsField: role.AccessGroupIDs,
-		serviceIDField:      role.ServiceID,
-		ttlField:            role.TTL / time.Second,
-		maxTTLField:         role.MaxTTL / time.Second,
+		accessGroupIDsField:  role.AccessGroupIDs,
+		serviceIDField:       role.ServiceID,
+		cosInstanceGUIDField: role.COSInstanceGUID,
+		ttlField:             role.TTL / time.Second,
+		maxTTLField:          role.MaxTTL / time.Second,
 	}
 	return &logical.Response{
 		Data: d,
@@ -206,6 +212,23 @@ func (b *ibmCloudSecretBackend) pathRoleCreateUpdate(ctx context.Context, req *l
 		role.BindingHash = getStringHash(role.ServiceID)
 	}
 
+	resourceGUID, ok := d.GetOk(cosInstanceGUIDField)
+	if ok {
+		role.COSInstanceGUID = resourceGUID.(string)
+		role.BindingHash = getStringHash(fmt.Sprintf("%s.%s", role.COSInstanceGUID, role.AccessGroupIDs))
+	}
+
+	if len(role.COSInstanceGUID) != 0 && len(role.ServiceID) != 0 {
+		if req.Operation == logical.UpdateOperation {
+			return logical.ErrorResponse("to change the role binding between a service IDs and Cloud Object Storage instance with access groups you must explicitly set the unused binding to the empty string"), nil
+		}
+		return logical.ErrorResponse("service IDs cannot be used in roles with Cloud Object Storage instances"), nil
+	}
+
+	if len(role.COSInstanceGUID) != 0 && len(role.AccessGroupIDs) == 0 {
+		return logical.ErrorResponse("one or more access group must be provided when a Cloud Object Storage instance is provided"), nil
+	}
+
 	if len(role.AccessGroupIDs) == 0 && len(role.ServiceID) == 0 {
 		return logical.ErrorResponse("either a service ID or a non empty access group list are required"), nil
 	}
@@ -248,9 +271,9 @@ func (b *ibmCloudSecretBackend) pathRoleCreateUpdate(ctx context.Context, req *l
 		return nil, err
 	}
 
-	iam, resp := b.getIAMHelper(ctx, req.Storage)
+	iam, resp := b.getAPIHelper(ctx, req.Storage)
 	if resp != nil {
-		b.Logger().Error("failed to retrieve an IAM helper", "error", resp.Error())
+		b.Logger().Error("failed to retrieve an API helper", "error", resp.Error())
 		return resp, nil
 	}
 
@@ -263,6 +286,13 @@ func (b *ibmCloudSecretBackend) pathRoleCreateUpdate(ctx context.Context, req *l
 
 	if len(role.ServiceID) != 0 {
 		_, resp := iam.CheckServiceIDAccount(adminToken, role.ServiceID, config.Account)
+		if resp != nil {
+			return resp, nil
+		}
+	}
+
+	if len(role.COSInstanceGUID) != 0 {
+		resp := iam.VerifyResourceInstanceExists(adminToken, role.COSInstanceGUID)
 		if resp != nil {
 			return resp, nil
 		}

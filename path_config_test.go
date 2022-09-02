@@ -48,8 +48,15 @@ func TestConfig_Write(t *testing.T) {
 		if !ok {
 			t.Fatal("the iam_endpoint field was not found in the read config")
 		}
-		if keyVal != iamEndpointFieldDefault {
+		if keyVal != iamEndpointDefault {
 			t.Fatal("the iam_endpoint was not defaulted as expected")
+		}
+		keyVal, ok = resp.Data[resourceControllerEndpointField]
+		if !ok {
+			t.Fatalf("the %s field was not found in the read config", resourceControllerEndpointField)
+		}
+		if keyVal != resourceControllerEndpointDefault {
+			t.Fatalf("the %s field was not found in the read config", resourceControllerEndpointField)
 		}
 
 	} else {
@@ -58,6 +65,15 @@ func TestConfig_Write(t *testing.T) {
 }
 
 func TestConfig_WriteIAMEndpoint(t *testing.T) {
+	testCustomEndpointWrite(t, iamEndpointField)
+}
+
+func TestConfig_WriteResourceControllerEndpoint(t *testing.T) {
+	testCustomEndpointWrite(t, resourceControllerEndpointField)
+}
+
+func testCustomEndpointWrite(t *testing.T, configField string) {
+	t.Helper()
 	b, s := testBackend(t)
 
 	configData := map[string]interface{}{}
@@ -65,11 +81,11 @@ func TestConfig_WriteIAMEndpoint(t *testing.T) {
 		t.Fatal("expected error")
 	}
 
-	testEndpoint := "https://private.iam.cloud.ibm.com"
+	testEndpoint := "https://custom.domain.test"
 	configData = map[string]interface{}{
-		apiKeyField:      "theAPIKey",
-		accountIDField:   "theAccount",
-		iamEndpointField: testEndpoint,
+		apiKeyField:    "theAPIKey",
+		accountIDField: "theAccount",
+		configField:    testEndpoint,
 	}
 	if err := testConfigCreate(t, b, s, configData); err != nil {
 		t.Fatalf("err: %v", err)
@@ -85,14 +101,13 @@ func TestConfig_WriteIAMEndpoint(t *testing.T) {
 	}
 
 	if resp != nil {
-		keyVal, ok := resp.Data[iamEndpointField]
+		keyVal, ok := resp.Data[configField]
 		if !ok {
-			t.Fatal("the iam_endpoint field was not found in the read config")
+			t.Fatalf("the %s field was not found in the read config", configField)
 		}
 		if keyVal != testEndpoint {
-			t.Fatal("the iam_endpoint was set as expected")
+			t.Fatalf("the %s was not set as expected", configField)
 		}
-
 	} else {
 		t.Fatal("did not get a response from the read post-create")
 	}
@@ -177,7 +192,10 @@ func TestLoadOfPreviousConfig(t *testing.T) {
 		t.Fatal(resp.Error())
 	}
 
-	if newConfig.IAMEndpoint != iamEndpointFieldDefault {
+	if newConfig.IAMEndpoint != iamEndpointDefault {
+		t.Fatalf("The config's IAM Endpoint was not defaulted correctly on the load of a previous version config")
+	}
+	if newConfig.ResourceControllerEndpoint != resourceControllerEndpointDefault {
 		t.Fatalf("The config's IAM Endpoint was not defaulted correctly on the load of a previous version config")
 	}
 }

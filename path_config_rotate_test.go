@@ -16,7 +16,7 @@ func TestConfigRotateRootSuccess(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockHelper := NewMockiamHelper(ctrl)
+	mockHelper := NewMockapiHelper(ctrl)
 
 	// Set up the config, the iamHelper mocks, and the backend
 	var configData = map[string]interface{}{
@@ -44,7 +44,7 @@ func TestConfigRotateRootSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatal("error configuring the backend")
 	}
-	b.iamHelper = mockHelper
+	b.apiHelper = mockHelper
 
 	// Rotate the key
 	resp, err := b.HandleRequest(context.Background(), &logical.Request{
@@ -87,7 +87,7 @@ func TestRotateCreateFails(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockHelper := NewMockiamHelper(ctrl)
+	mockHelper := NewMockapiHelper(ctrl)
 
 	// Set up the config, the iamHelper mocks, and the backend
 	var configData = map[string]interface{}{
@@ -111,7 +111,7 @@ func TestRotateCreateFails(t *testing.T) {
 	if err != nil {
 		t.Fatal("error configuring the backend")
 	}
-	b.iamHelper = mockHelper
+	b.apiHelper = mockHelper
 
 	// Rotate the key
 	resp, err := b.HandleRequest(context.Background(), &logical.Request{
@@ -150,7 +150,7 @@ func TestRotateDeleteKeyFails(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockHelper := NewMockiamHelper(ctrl)
+	mockHelper := NewMockapiHelper(ctrl)
 
 	// Set up the config, the iamHelper mocks, and the backend
 	var configData = map[string]interface{}{
@@ -179,7 +179,7 @@ func TestRotateDeleteKeyFails(t *testing.T) {
 	if err != nil {
 		t.Fatal("error configuring the backend")
 	}
-	b.iamHelper = mockHelper
+	b.apiHelper = mockHelper
 
 	// Rotate the key
 	resp, err := b.HandleRequest(context.Background(), &logical.Request{

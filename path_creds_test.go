@@ -27,7 +27,7 @@ func TestStaticServiceID(t *testing.T) {
 
 	// Test successful Get
 	testRoleCreate(t, b, s, map[string]interface{}{nameField: "testRole", serviceIDField: "serviceID1"})
-	sec := testSuccessfulGet(t, b, s, map[string]string{apiKeyID: "apiKeyID"}, 0, 0)
+	sec := testSuccessfulGet(t, b, s, map[string]string{apiKeyField: "theAPIKey"}, map[string]string{apiKeyID: "apiKeyID"}, 0, 0)
 
 	// Test successful renew and revoke
 	testSuccessfulRenew(t, b, s, sec)
@@ -36,7 +36,7 @@ func TestStaticServiceID(t *testing.T) {
 	// Update role with TTLs set
 	testRoleUpdate(t, b, s, map[string]interface{}{nameField: "testRole", serviceIDField: "serviceID1", ttlField: 1000, maxTTLField: 2000})
 	// Test successful Get, verify TTLs
-	sec = testSuccessfulGet(t, b, s, map[string]string{apiKeyID: "apiKeyID"}, 1000, 2000)
+	sec = testSuccessfulGet(t, b, s, map[string]string{apiKeyField: "theAPIKey"}, map[string]string{apiKeyID: "apiKeyID"}, 1000, 2000)
 
 	// Update role to different user
 	testRoleUpdate(t, b, s, map[string]interface{}{nameField: "testRole", serviceIDField: "serviceID2"})
@@ -50,7 +50,7 @@ func TestStaticServiceID(t *testing.T) {
 
 	// Test failure to renew when the role has been deleted
 	testRoleUpdate(t, b, s, map[string]interface{}{nameField: "testRole", serviceIDField: "serviceID1"})
-	sec = testSuccessfulGet(t, b, s, map[string]string{apiKeyID: "apiKeyID"}, 1000, 2000)
+	sec = testSuccessfulGet(t, b, s, map[string]string{apiKeyField: "theAPIKey"}, map[string]string{apiKeyID: "apiKeyID"}, 1000, 2000)
 	testRoleDelete(t, b, s, "testRole")
 	testRenewFailureWithDeletedRole(t, b, s, sec)
 
@@ -74,7 +74,7 @@ func TestDynamicServiceID(t *testing.T) {
 	// Test successful Get
 	accessGroups := []string{"a", "b", "c"}
 	testRoleCreate(t, b, s, map[string]interface{}{nameField: "testRole", accessGroupIDsField: accessGroups})
-	sec := testSuccessfulGet(t, b, s, map[string]string{serviceIDField: "createdServiceID"}, 0, 0)
+	sec := testSuccessfulGet(t, b, s, map[string]string{apiKeyField: "theAPIKey"}, map[string]string{serviceIDField: "createdServiceID"}, 0, 0)
 
 	// Test successful renew and revoke
 	testSuccessfulRenew(t, b, s, sec)
@@ -83,7 +83,7 @@ func TestDynamicServiceID(t *testing.T) {
 	// Update role with TTLs set
 	testRoleUpdate(t, b, s, map[string]interface{}{nameField: "testRole", accessGroupIDsField: accessGroups, ttlField: 1000, maxTTLField: 2000})
 	// Test successful Get, verify TTLs
-	sec = testSuccessfulGet(t, b, s, map[string]string{serviceIDField: "createdServiceID"}, 1000, 2000)
+	sec = testSuccessfulGet(t, b, s, map[string]string{apiKeyField: "theAPIKey"}, map[string]string{serviceIDField: "createdServiceID"}, 1000, 2000)
 
 	// Update role to add a group
 	accessGroups = append(accessGroups, "d")
@@ -100,13 +100,74 @@ func TestDynamicServiceID(t *testing.T) {
 	// Test failure to renew when the role has been deleted
 	accessGroups = []string{"a"}
 	testRoleUpdate(t, b, s, map[string]interface{}{nameField: "testRole", accessGroupIDsField: accessGroups})
-	sec = testSuccessfulGet(t, b, s, map[string]string{serviceIDField: "createdServiceID"}, 1000, 2000)
+	sec = testSuccessfulGet(t, b, s, map[string]string{apiKeyField: "theAPIKey"}, map[string]string{serviceIDField: "createdServiceID"}, 1000, 2000)
+	testRoleDelete(t, b, s, "testRole")
+	testRenewFailureWithDeletedRole(t, b, s, sec)
+
+}
+
+func TestDynamicServiceIDWithHMACKeys(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Set up
+	callCount := map[string]int{
+		"CreateCOSResourceKey":         5, // 4 successful, 1 failed cred get
+		"DeleteCOSResourceKey":         1,
+		"VerifyAccessGroupExists":      20, // the number of times role create or update is called time the number access group
+		"AddServiceIDToAccessGroup":    16, // the number of times role create or update is called time the number access group
+		"VerifyResourceInstanceExists": 1,
+		"GetAPIKeyDetails":             6,  // 4 successful get credentials, 1 failed get credentials, 1 for config validation
+		"GetPolicyIDs":                 5,  // 4 successful get credentials, 1 failed get credentials
+		"DeletePolicy":                 10, // 4 successful get credentials, 1 failed get credentials x 2 policies per call
+	}
+
+	b, s := getMockedBackendDynamicServiceIDWithHMACKeys(t, ctrl, callCount)
+
+	// Test successful Get
+	accessGroups := []string{"a", "b", "c"}
+	cosGUID := "theCOSGUID"
+	testRoleCreate(t, b, s, map[string]interface{}{nameField: "testRole", cosInstanceGUIDField: cosGUID, accessGroupIDsField: accessGroups})
+
+	expectedCredData := map[string]string{apiKeyField: "apiKeyValue", accessKeyIDField: "accessKeyID", secretAccessKeyField: "secretAccessKey"}
+	expectedInternalData := map[string]string{resourceKeyGUIDField: "resourceKeyGUID"}
+	sec := testSuccessfulGet(t, b, s, expectedCredData, expectedInternalData, 0, 0)
+
+	// Test successful renew and revoke
+	testSuccessfulRenew(t, b, s, sec)
+	testSuccessfulRevoke(t, b, s, sec)
+
+	// Update role with TTLs set
+	testRoleUpdate(t, b, s, map[string]interface{}{nameField: "testRole", cosInstanceGUIDField: cosGUID, accessGroupIDsField: accessGroups, ttlField: 1000, maxTTLField: 2000})
+	// Test successful Get, verify TTLs
+	sec = testSuccessfulGet(t, b, s, expectedCredData, expectedInternalData, 1000, 2000)
+
+	// Test trying to renew a credential after the role has been updated to have new access groups
+	accessGroups = append(accessGroups, "d")
+	testRoleUpdate(t, b, s, map[string]interface{}{nameField: "testRole", cosInstanceGUIDField: cosGUID, accessGroupIDsField: accessGroups})
+	testRenewFailureWithChangedBindings(t, b, s, sec)
+
+	// Test trying to renew a credential after the role has an updated the COS instance
+	sec = testSuccessfulGet(t, b, s, expectedCredData, expectedInternalData, 0, 0)
+	testRoleUpdate(t, b, s, map[string]interface{}{nameField: "testRole", cosInstanceGUIDField: "newCOSGUID", accessGroupIDsField: accessGroups})
+	testRenewFailureWithChangedBindings(t, b, s, sec)
+
+	// Test failure to get a credential
+	accessGroups = append(accessGroups, "groupToTriggerFailure")
+	testRoleUpdate(t, b, s, map[string]interface{}{nameField: "testRole", cosInstanceGUIDField: cosGUID, accessGroupIDsField: accessGroups})
+	testFailedGet(t, b, s)
+
+	// Test failure to renew when the role has been deleted
+	accessGroups = []string{"a"}
+	testRoleUpdate(t, b, s, map[string]interface{}{nameField: "testRole", accessGroupIDsField: accessGroups})
+	sec = testSuccessfulGet(t, b, s, expectedCredData, expectedInternalData, 1000, 2000)
 	testRoleDelete(t, b, s, "testRole")
 	testRenewFailureWithDeletedRole(t, b, s, sec)
 
 }
 
 func TestStaticServiceIDDeleted(t *testing.T) {
+	// simulating a service ID being deleted directly in IBM Cloud or other ID checking failure
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -123,7 +184,7 @@ func TestStaticServiceIDDeleted(t *testing.T) {
  The internalData parameter is used to pass in key-values that differ between static and dynamic service ID credentials.
  If the ttl and maxTTL values are greater than 0 they will be used to check the Secret's lease.
 */
-func testSuccessfulGet(t *testing.T, b *ibmCloudSecretBackend, s logical.Storage, internalData map[string]string, ttl, maxTTL int) *logical.Secret {
+func testSuccessfulGet(t *testing.T, b *ibmCloudSecretBackend, s logical.Storage, data map[string]string, internalData map[string]string, ttl, maxTTL int) *logical.Secret {
 	t.Helper()
 	resp, err := b.HandleRequest(context.Background(), &logical.Request{
 		Operation: logical.ReadOperation,
@@ -140,8 +201,22 @@ func testSuccessfulGet(t *testing.T, b *ibmCloudSecretBackend, s logical.Storage
 		t.Fatalf("expected response with secret, got response: %v", resp)
 	}
 	// Verify the response
-	if resp.Data[apiKeyField].(string) != "theAPIKey" {
-		t.Fatalf("did not receive the exepcted API key")
+	for k, expected := range data {
+		received, ok := resp.Data[k]
+		if !ok {
+			t.Fatalf("the credential does not have the expected key: %s", k)
+		}
+		if received.(string) != expected {
+			t.Fatalf("expected a credential with key-value %s=%s, but received %s=%s", k, expected, k, received)
+		}
+	}
+	// Verify the received Data does not have keys that were unexpected
+	for k, v := range resp.Data {
+		// TODO add test to only allow COS HMAC keys to missing from the expected data, and then only if
+		// the response has them as zero length
+		if _, ok := data[k]; !ok {
+			t.Fatalf("received a credential with and unexpected key %s with value %s", k, v)
+		}
 	}
 
 	for k, v := range internalData {
@@ -275,7 +350,6 @@ func TestServiceID_WAL_Cleanup(t *testing.T) {
 		t.Fatalf("The WAL is not empty at the start of the test.")
 	}
 
-	// Test successful Get
 	accessGroups := []string{"a"}
 	testRoleCreate(t, b, s, map[string]interface{}{nameField: "APIKeyErrorRole", accessGroupIDsField: accessGroups})
 
@@ -297,6 +371,57 @@ func TestServiceID_WAL_Cleanup(t *testing.T) {
 	}
 
 	if !strings.Contains(err.Error(), "intentional test error from mock CreateAPIKey") {
+		t.Fatalf("expected intentional error from mock, but got '%s'", err.Error())
+	}
+
+	assertEmptyWAL(t, b, s)
+}
+
+// TestResourceKey_WAL_Cleanup tests that any resource key that gets created, but
+// fails to complete the other credential creation steps, gets cleaned up by the periodic WAL
+// function.
+func TestResourceKey_WAL_Cleanup(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	callCount := map[string]int{
+		"CreateCOSResourceKey":         1,
+		"VerifyAccessGroupExists":      1,
+		"AddServiceIDToAccessGroup":    1,
+		"VerifyResourceInstanceExists": 1,
+		"GetAPIKeyDetails":             2,
+		"GetPolicyIDs":                 1,
+		"DeletePolicy":                 2,
+		"DeleteCOSResourceKey":         1,
+	}
+
+	b, s := getMockedBackendDynamicServiceIDWithHMACKeys(t, ctrl, callCount)
+
+	wal, _ := framework.ListWAL(context.Background(), s)
+	if len(wal) != 0 {
+		t.Fatalf("The WAL is not empty at the start of the test.")
+	}
+
+	accessGroups := []string{"groupToTriggerFailure"}
+	testRoleCreate(t, b, s, map[string]interface{}{nameField: "testRole", accessGroupIDsField: accessGroups, cosInstanceGUIDField: "theCOSGUID"})
+
+	// create a short timeout to short-circuit the retry process and trigger the
+	// deadline error
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	resp, err := b.HandleRequest(ctx, &logical.Request{
+		Operation: logical.ReadOperation,
+		Path:      "creds/testRole",
+		Storage:   s,
+	})
+	if err == nil {
+		t.Fatalf("expected an error, but did not receive one")
+	}
+	if resp != nil {
+		t.Fatalf("expected no response, but received:%#v", resp)
+	}
+
+	if !strings.Contains(err.Error(), "groupToTriggerFailure") {
 		t.Fatalf("expected intentional error from mock, but got '%s'", err.Error())
 	}
 
@@ -341,7 +466,7 @@ func getMockedBackendStaticServiceID(t *testing.T, ctrl *gomock.Controller, call
 		accountIDField: "theAccountID",
 	}
 	adminToken := "AdminToken"
-	mockHelper := NewMockiamHelper(ctrl)
+	mockHelper := NewMockapiHelper(ctrl)
 	// For the adminKey we always return AdminToken, this lets enforce that the code is correctly using the admin token
 	// for the IBM Cloud API calls calls.
 	mockHelper.EXPECT().ObtainToken("adminKey").Return(adminToken, nil)
@@ -384,7 +509,7 @@ func getMockedBackendStaticServiceID(t *testing.T, ctrl *gomock.Controller, call
 	if err != nil {
 		t.Fatal("error configuring the backend")
 	}
-	b.iamHelper = mockHelper
+	b.apiHelper = mockHelper
 
 	return b, s
 }
@@ -398,7 +523,7 @@ func getMockedBackendDynamicServiceID(t *testing.T, ctrl *gomock.Controller, cal
 	}
 
 	adminToken := "AdminToken"
-	mockHelper := NewMockiamHelper(ctrl)
+	mockHelper := NewMockapiHelper(ctrl)
 	// For the adminKey we always return AdminToken, this lets enforce that the code is correctly using the admin token
 	// for the IBM Cloud API calls calls.
 	mockHelper.EXPECT().ObtainToken("adminKey").Return(adminToken, nil)
@@ -462,7 +587,106 @@ func getMockedBackendDynamicServiceID(t *testing.T, ctrl *gomock.Controller, cal
 	if err != nil {
 		t.Fatal("error configuring the backend")
 	}
-	b.iamHelper = mockHelper
+	b.apiHelper = mockHelper
+
+	return b, s
+}
+
+func getMockedBackendDynamicServiceIDWithHMACKeys(t *testing.T, ctrl *gomock.Controller, callCount map[string]int) (*ibmCloudSecretBackend, logical.Storage) {
+	t.Helper()
+
+	var configData = map[string]interface{}{
+		apiKeyField:    "adminKey",
+		accountIDField: "theAccountID",
+	}
+
+	adminToken := "AdminToken"
+	apiKey := "apiKeyValue"
+	serviceIDIAM := "resourceKeyServiceID"
+
+	mockHelper := NewMockapiHelper(ctrl)
+	// For the adminKey we always return AdminToken, this lets enforce that the code is correctly using the admin token
+	// for the IBM Cloud API calls calls.
+	mockHelper.EXPECT().ObtainToken("adminKey").Return(adminToken, nil)
+	mockHelper.EXPECT().VerifyToken(gomock.Any(), adminToken).Return(&tokenInfo{Expiry: time.Now().Add(time.Hour)}, nil)
+
+	// GetAPIKeyDetails is used for the backend configuration
+	// as well as the main flow of getSecretDynamicServiceIDWithHMACKey
+	// This mock covers both
+	mockHelper.EXPECT().GetAPIKeyDetails(adminToken, gomock.Any()).
+		Times(callCount["GetAPIKeyDetails"]).
+		DoAndReturn(func(token, key string) (*APIKeyDetailsResponse, error) {
+			if key == "adminKey" {
+				return &APIKeyDetailsResponse{ID: "unused", IAMID: "unused", AccountID: "theAccountID"}, nil
+			} else if key == apiKey {
+				return &APIKeyDetailsResponse{ID: "unused", IAMID: serviceIDIAM, AccountID: "unused"}, nil
+			} else {
+				t.Fatal("unexpected API key value in mocked GetAPIKeyDetails:", key)
+			}
+			return nil, nil
+		})
+	// Mock for create / update of the test role and the look up of the COS instance
+	mockHelper.EXPECT().VerifyAccessGroupExists(adminToken, gomock.Any(), "theAccountID").
+		Times(callCount["VerifyAccessGroupExists"]).
+		DoAndReturn(func(iamToken, group, accountID string) (*logical.Response, error) {
+			if !strutil.StrListContains([]string{"a", "b", "c", "d", "groupToTriggerFailure"}, group) {
+				return logical.ErrorResponse("VerifyAccessGroupExists error with %s", group), nil
+			}
+			return nil, nil
+		})
+	mockHelper.EXPECT().VerifyResourceInstanceExists("AdminToken", gomock.Any()).
+		MinTimes(callCount["VerifyResourceInstanceExists"]).Return(nil)
+
+	// Mocks for getSecretDynamicServiceIDWithHMACKey
+	resourceKeyGUID := "resourceKeyGUID"
+	accessKeyID := "accessKeyID"
+	secretAccessKey := "secretAccessKey"
+
+	mockHelper.EXPECT().CreateCOSResourceKey(adminToken, "theCOSGUID", "testRole").
+		Times(callCount["CreateCOSResourceKey"]).
+		DoAndReturn(func(iamToken, cosGUID, roleName string) (string, string, string, string, error) {
+			if roleName != "testRole" {
+				return "", "", "", "", fmt.Errorf("unexpected role name in CreateCOSResourceKey: %s", roleName)
+			}
+			return resourceKeyGUID, apiKey, accessKeyID, secretAccessKey, nil
+		})
+
+	mockHelper.EXPECT().GetPolicyIDs("AdminToken", "theAccountID", serviceIDIAM).
+		Times(callCount["GetPolicyIDs"]).
+		Return([]string{"p1", "p2"}, nil)
+
+	expectedPolicies := []string{"p1", "p2", "p1", "p2", "p1", "p2", "p1", "p2", "p1", "p2"}
+	mockHelper.EXPECT().DeletePolicy("AdminToken", gomock.Any()).
+		Times(callCount["DeletePolicy"]).
+		DoAndReturn(func(iamToken, policy string) error {
+			if len(expectedPolicies) == 0 {
+				t.Fatal("DeletePolicy was called too many times")
+			}
+			if policy != expectedPolicies[0] {
+				t.Fatal("Unexpected policy, or policies called out of order:", policy)
+			}
+			expectedPolicies = expectedPolicies[1:]
+			return nil
+		})
+
+	mockHelper.EXPECT().AddServiceIDToAccessGroup(adminToken, serviceIDIAM, gomock.Any()).
+		Times(callCount["AddServiceIDToAccessGroup"]).
+		DoAndReturn(func(iamToken, iamID, group string) error {
+			if !strutil.StrListContains([]string{"a", "b", "c", "d"}, group) {
+				return fmt.Errorf("AddServiceIDToAccessGroup error with group %s", group)
+			}
+			return nil
+		})
+
+	// Mock for revoke
+	mockHelper.EXPECT().DeleteCOSResourceKey(adminToken, resourceKeyGUID).Times(callCount["DeleteCOSResourceKey"]).Return(nil)
+
+	b, s := testBackend(t)
+	err := testConfigCreate(t, b, s, configData)
+	if err != nil {
+		t.Fatal("error configuring the backend")
+	}
+	b.apiHelper = mockHelper
 
 	return b, s
 }
@@ -475,7 +699,7 @@ func getMockedBackendStaticServiceIDDeleteTest(t *testing.T, ctrl *gomock.Contro
 		accountIDField: "theAccountID",
 	}
 	adminToken := "AdminToken"
-	mockHelper := NewMockiamHelper(ctrl)
+	mockHelper := NewMockapiHelper(ctrl)
 	// For the adminKey we always return AdminToken, this lets enforce that the code is correctly using the admin token
 	// for the IBM Cloud API calls calls.
 	mockHelper.EXPECT().ObtainToken("adminKey").Return(adminToken, nil)
@@ -502,7 +726,7 @@ func getMockedBackendStaticServiceIDDeleteTest(t *testing.T, ctrl *gomock.Contro
 	if err != nil {
 		t.Fatal("error configuring the backend")
 	}
-	b.iamHelper = mockHelper
+	b.apiHelper = mockHelper
 
 	return b, s
 }

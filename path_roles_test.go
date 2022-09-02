@@ -17,10 +17,11 @@ import (
 // Defaults for verifying response data. If a value is not included here, it must be included in the
 // 'expected' map param for a test.
 var expectedDefaults = map[string]interface{}{
-	ttlField:            int64(0),
-	maxTTLField:         int64(0),
-	accessGroupIDsField: []string{},
-	serviceIDField:      "",
+	ttlField:             int64(0),
+	maxTTLField:          int64(0),
+	accessGroupIDsField:  []string{},
+	serviceIDField:       "",
+	cosInstanceGUIDField: "",
 }
 
 // Test roles with access groups lists
@@ -44,7 +45,6 @@ func TestCRUDHappyPathAccessGroups(t *testing.T) {
 	})
 
 	testRoleRead(t, b, s, roleName, map[string]interface{}{
-		nameField:           roleName,
 		accessGroupIDsField: boundGroups,
 	})
 	boundGroups = append(boundGroups, "group4")
@@ -83,7 +83,6 @@ func TestCRUDHappyPathServiceID(t *testing.T) {
 	})
 
 	testRoleRead(t, b, s, roleName, map[string]interface{}{
-		nameField:      roleName,
 		serviceIDField: boundID,
 	})
 	testRoleUpdate(t, b, s, map[string]interface{}{
@@ -96,6 +95,49 @@ func TestCRUDHappyPathServiceID(t *testing.T) {
 		ttlField:       int64(1000),
 		maxTTLField:    int64(2000),
 		serviceIDField: "serviceID2",
+	})
+	testRoleDelete(t, b, s, roleName)
+}
+
+// Test roles with access groups lists
+func TestCRUDHappyPathCOSHMACWithAccessGroups(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	minCalls := map[string]int{
+		"VerifyAccessGroupExists": 4,
+	}
+
+	b, s := getMockedBackend(t, ctrl, minCalls)
+
+	roleName := testRole(t)
+	boundGroups := []string{"group1", "group2", "group3"}
+	cosInstanceGUID := "testCOSGUID"
+
+	testRoleCreate(t, b, s, map[string]interface{}{
+		nameField:            roleName,
+		accessGroupIDsField:  strings.Join(boundGroups, ","),
+		cosInstanceGUIDField: cosInstanceGUID,
+	})
+
+	testRoleRead(t, b, s, roleName, map[string]interface{}{
+		accessGroupIDsField:  boundGroups,
+		cosInstanceGUIDField: cosInstanceGUID,
+	})
+	boundGroups = append(boundGroups, "group4")
+	testRoleUpdate(t, b, s, map[string]interface{}{
+		nameField:            roleName,
+		ttlField:             1000,
+		maxTTLField:          2000,
+		accessGroupIDsField:  strings.Join(boundGroups, ","),
+		cosInstanceGUIDField: cosInstanceGUID,
+	})
+	testRoleRead(t, b, s, roleName, map[string]interface{}{
+		ttlField:             int64(1000),
+		maxTTLField:          int64(2000),
+		accessGroupIDsField:  boundGroups,
+		cosInstanceGUIDField: cosInstanceGUID,
 	})
 	testRoleDelete(t, b, s, roleName)
 }
@@ -142,6 +184,31 @@ func TestServiceIDVerifyError(t *testing.T) {
 	},
 		[]string{"CheckServiceIDAccount error with serviceIDNotThere"})
 }
+
+func TestCOSInstanceVerifyError(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	minCalls := map[string]int{
+		"VerifyResourceInstanceExists": 1,
+		"VerifyAccessGroupExists":      1,
+	}
+
+	b, s := getMockedBackend(t, ctrl, minCalls)
+
+	roleName := testRole(t)
+	boundGroups := []string{"group1"}
+
+	testRoleCreateError(t, b, s, map[string]interface{}{
+		nameField:            roleName,
+		accessGroupIDsField:  boundGroups,
+		cosInstanceGUIDField: "nonExistentInstance",
+	},
+		[]string{"VerifyResourceInstanceExists error with nonExistentInstance"})
+}
+
 func TestBindingSpecificationErrors(t *testing.T) {
 	t.Parallel()
 
@@ -164,13 +231,28 @@ func TestBindingSpecificationErrors(t *testing.T) {
 	},
 		[]string{"either a service ID or a non empty access group list are required"})
 
-	// Test both bindings specified
+	// Test both service ID and access group are specified
 	testRoleCreateError(t, b, s, map[string]interface{}{
 		nameField:           roleName,
 		serviceIDField:      "s1",
 		accessGroupIDsField: []string{"group1"},
 	},
 		[]string{"either an access group list or service ID should be provided, not both"})
+
+	// Test COS instance specified without access groups
+	testRoleCreateError(t, b, s, map[string]interface{}{
+		nameField:            roleName,
+		cosInstanceGUIDField: "s1",
+	},
+		[]string{"one or more access group must be provided when a Cloud Object Storage instance is provided"})
+
+	// Test when both COS instance and serviceID are specified
+	testRoleCreateError(t, b, s, map[string]interface{}{
+		nameField:            roleName,
+		cosInstanceGUIDField: "c1",
+		serviceIDField:       "s1",
+	},
+		[]string{"service IDs cannot be used in roles with Cloud Object Storage instances"})
 }
 
 func TestTTLError(t *testing.T) {
@@ -395,6 +477,17 @@ func checkData(resp *logical.Response, expected map[string]interface{}, expected
 			return fmt.Errorf("%s mismatch, expected: %v but got %v", k, expectedVal, actualVal)
 		}
 	}
+	// check that the response data has all of the keys in the expected and expectedDefaults maps
+	for key := range expected {
+		if _, ok := resp.Data[key]; !ok {
+			return fmt.Errorf("the response does not have the expected key %s", key)
+		}
+	}
+	for key := range expectedDefault {
+		if _, ok := resp.Data[key]; !ok {
+			return fmt.Errorf("the response does not have the expected default key %s", key)
+		}
+	}
 	return nil
 }
 
@@ -426,7 +519,7 @@ func getMockedBackend(t *testing.T, ctrl *gomock.Controller, minCalls map[string
 		accountIDField: "theAccountID",
 	}
 
-	mockHelper := NewMockiamHelper(ctrl)
+	mockHelper := NewMockapiHelper(ctrl)
 	// For the adminKey we always return AdminToken, this lets enforce that the code is correctly using the admin token
 	// for the IBM Cloud API calls calls.
 	mockHelper.EXPECT().ObtainToken("adminKey").Return("AdminToken", nil)
@@ -438,6 +531,13 @@ func getMockedBackend(t *testing.T, ctrl *gomock.Controller, minCalls map[string
 		MinTimes(minCalls["VerifyAccessGroupExists"]).DoAndReturn(func(iamToken, group, accountID string) *logical.Response {
 		if !strutil.StrListContains([]string{"group1", "group2", "group3", "group4"}, group) {
 			return logical.ErrorResponse("VerifyAccessGroupExists error with %s", group)
+		}
+		return nil
+	})
+	mockHelper.EXPECT().VerifyResourceInstanceExists("AdminToken", gomock.Any()).
+		MinTimes(minCalls["VerifyResourceInstanceExists"]).DoAndReturn(func(iamToken, instanceGUID string) *logical.Response {
+		if instanceGUID == "nonExistentInstance" {
+			return logical.ErrorResponse("VerifyResourceInstanceExists error with %s", instanceGUID)
 		}
 		return nil
 	})
@@ -454,7 +554,7 @@ func getMockedBackend(t *testing.T, ctrl *gomock.Controller, minCalls map[string
 	if err != nil {
 		t.Fatal("error configuring the backend")
 	}
-	b.iamHelper = mockHelper
+	b.apiHelper = mockHelper
 
 	return b, s
 }

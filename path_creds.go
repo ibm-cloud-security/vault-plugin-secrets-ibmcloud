@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
 )
@@ -16,6 +15,14 @@ func secretServiceIDKey(b *ibmCloudSecretBackend) *framework.Secret {
 			apiKeyField: {
 				Type:        framework.TypeString,
 				Description: "An API key",
+			},
+			accessKeyIDField: {
+				Type:        framework.TypeString,
+				Description: "A HMAC access key ID",
+			},
+			secretAccessKeyField: {
+				Type:        framework.TypeString,
+				Description: "A HMAC secret access key",
 			},
 		},
 
@@ -93,11 +100,12 @@ func (b *ibmCloudSecretBackend) secretKeyRevoke(ctx context.Context, req *logica
 
 	serviceIDRaw, dynamicIDSecret := req.Secret.InternalData[serviceIDField]
 	apiKeyIDRaw, staticIDSecret := req.Secret.InternalData[apiKeyID]
+	resourceKeyGUIDRaw, dynamicHMACSecret := req.Secret.InternalData[resourceKeyGUIDField]
 	roleName, roleNameOK := req.Secret.InternalData[roleNameField]
 
-	iam, resp := b.getIAMHelper(ctx, req.Storage)
+	iam, resp := b.getAPIHelper(ctx, req.Storage)
 	if resp != nil {
-		b.Logger().Error("failed to retrieve an IAM helper", "error", resp.Error())
+		b.Logger().Error("failed to retrieve an API helper", "error", resp.Error())
 		return resp, nil
 	}
 
@@ -133,9 +141,24 @@ func (b *ibmCloudSecretBackend) secretKeyRevoke(ctx context.Context, req *logica
 				"is removed.", "apiKeyID", apiKeyIDRaw, "vaultRole", roleName, "accountID", accountID, "deleteError", err)
 			return nil, err
 		}
-
+	} else if dynamicHMACSecret {
+		err = iam.DeleteCOSResourceKey(adminToken, resourceKeyGUIDRaw.(string))
+		if err != nil {
+			if !roleNameOK {
+				roleName = "<Not Found>"
+			}
+			accountID := "<Not Found>"
+			config, errResp := b.getConfig(ctx, req.Storage)
+			if errResp == nil {
+				accountID = config.Account
+			}
+			b.Logger().Error("An error occurred removing a resource key (service credential) while revoking a secret lease. "+
+				"The resource key may have been manually deleted in IBM Cloud. The administrator should verify the resource key "+
+				"and its underlying service ID are removed.", "resource key GUID", resourceKeyGUIDRaw.(string), "vaultRole", roleName, "accountID", accountID, "deleteError", err)
+			return nil, err
+		}
 	} else {
-		msg := "secret is missing service ID or API key ID internal data"
+		msg := "secret is missing service ID, API key ID, or resource key GUID in internal data"
 		b.Logger().Error(msg)
 		return nil, fmt.Errorf(msg)
 	}
@@ -156,7 +179,12 @@ func (b *ibmCloudSecretBackend) getSecretKey(ctx context.Context, s logical.Stor
 	}
 
 	var resp *logical.Response
-	if len(role.AccessGroupIDs) > 0 {
+	if len(role.COSInstanceGUID) > 0 {
+		resp, err = b.getSecretDynamicServiceIDWithHMACKey(ctx, s, role, adminToken, roleName, config)
+		if err != nil {
+			return nil, err
+		}
+	} else if len(role.AccessGroupIDs) > 0 {
 		resp, err = b.getSecretDynamicServiceID(ctx, s, role, adminToken, roleName, config)
 		if err != nil {
 			return nil, err
@@ -181,9 +209,9 @@ func (b *ibmCloudSecretBackend) getSecretKey(ctx context.Context, s logical.Stor
 }
 
 func (b *ibmCloudSecretBackend) getSecretDynamicServiceID(ctx context.Context, s logical.Storage, role *ibmCloudRole, adminToken, roleName string, config *ibmCloudConfig) (*logical.Response, error) {
-	iam, resp := b.getIAMHelper(ctx, s)
+	iam, resp := b.getAPIHelper(ctx, s)
 	if resp != nil {
-		b.Logger().Error("failed to retrieve an IAM helper", "error", resp.Error())
+		b.Logger().Error("failed to retrieve an API helper", "error", resp.Error())
 		return resp, nil
 	}
 
@@ -198,7 +226,7 @@ func (b *ibmCloudSecretBackend) getSecretDynamicServiceID(ctx context.Context, s
 	// Write a WAL entry in case the access group assignments or API key creation process doesn't complete
 	walID, err := framework.PutWAL(ctx, s, walTypeServiceID, uniqueID)
 	if err != nil {
-		return nil, errwrap.Wrapf("error writing WAL: {{err}}", err)
+		return nil, fmt.Errorf("error writing WAL: %w", err)
 	}
 
 	// Add service ID to access groups
@@ -219,7 +247,7 @@ func (b *ibmCloudSecretBackend) getSecretDynamicServiceID(ctx context.Context, s
 
 	// Secret creation complete, delete the WAL
 	if err := framework.DeleteWAL(ctx, s, walID); err != nil {
-		return nil, errwrap.Wrapf("error deleting WAL: {{err}}", err)
+		return nil, fmt.Errorf("error deleting WAL: %w", err)
 	}
 
 	secretD := map[string]interface{}{
@@ -237,9 +265,9 @@ func (b *ibmCloudSecretBackend) getSecretDynamicServiceID(ctx context.Context, s
 
 func (b *ibmCloudSecretBackend) getSecretStaticServiceID(ctx context.Context, s logical.Storage, role *ibmCloudRole, adminToken, roleName string, config *ibmCloudConfig) (*logical.Response, error) {
 
-	iam, resp := b.getIAMHelper(ctx, s)
+	iam, resp := b.getAPIHelper(ctx, s)
 	if resp != nil {
-		b.Logger().Error("failed to retrieve an IAM helper", "error", resp.Error())
+		b.Logger().Error("failed to retrieve an API helper", "error", resp.Error())
 		return resp, nil
 	}
 
@@ -270,11 +298,86 @@ func (b *ibmCloudSecretBackend) getSecretStaticServiceID(ctx context.Context, s 
 	return resp, nil
 }
 
-const pathServiceIDKeySyn = `Generate an API key under a specific role.`
+func (b *ibmCloudSecretBackend) getSecretDynamicServiceIDWithHMACKey(ctx context.Context, s logical.Storage, role *ibmCloudRole, adminToken, roleName string, config *ibmCloudConfig) (*logical.Response, error) {
+	apiHelper, resp := b.getAPIHelper(ctx, s)
+	if resp != nil {
+		b.Logger().Error("failed to retrieve an API helper", "error", resp.Error())
+		return resp, nil
+	}
+
+	// Create the resource key, which is the top level object to be tracked in the secret
+	// and deleted upon revocation. If any subsequent step fails, the resource key will be
+	// deleted as part of WAL rollback.
+	keyGUID, apiKey, access_key_id, secret_access_key, err := apiHelper.CreateCOSResourceKey(adminToken, role.COSInstanceGUID, roleName)
+	if err != nil {
+		return nil, err
+	}
+
+	// Write a WAL entry in case the access group assignments or API key creation process doesn't complete
+	walID, err := framework.PutWAL(ctx, s, walTypeResourceKey, keyGUID)
+	if err != nil {
+		return nil, fmt.Errorf("error writing WAL: %w", err)
+	}
+	// Get the API key details so we can know the details of the service ID that was created for the
+	// resource key
+	apiKeyDetails, err := apiHelper.GetAPIKeyDetails(adminToken, apiKey)
+	if err != nil {
+		return nil, err
+	}
+
+	// Remove the policy added by CreateCOSResourceKey
+	policies, err := apiHelper.GetPolicyIDs(adminToken, config.Account, apiKeyDetails.IAMID)
+	if err != nil {
+		return nil, err
+	}
+	if len(policies) == 0 {
+		return nil, fmt.Errorf("no policies were found for service ID %s which was created by the resource controller key creation", apiKeyDetails.IAMID)
+	}
+	for _, policy := range policies {
+		err := apiHelper.DeletePolicy(adminToken, policy)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Add service ID to access groups
+	for _, group := range role.AccessGroupIDs {
+		err := apiHelper.AddServiceIDToAccessGroup(adminToken, apiKeyDetails.IAMID, group)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Secret creation complete, delete the WAL
+	if err := framework.DeleteWAL(ctx, s, walID); err != nil {
+		return nil, fmt.Errorf("error deleting WAL: %w", err)
+	}
+
+	secretD := map[string]interface{}{
+		apiKeyField:          apiKey,
+		accessKeyIDField:     access_key_id,
+		secretAccessKeyField: secret_access_key,
+	}
+	internalD := map[string]interface{}{
+		resourceKeyGUIDField: keyGUID,
+		roleNameField:        roleName,
+		roleBindingHashField: role.BindingHash,
+	}
+
+	resp = b.Secret(secretTypeKey).Response(secretD, internalD)
+	return resp, nil
+}
+
+const pathServiceIDKeySyn = `Generate an API key and optionally an HMAC key under a specific role.`
 const pathServiceIDKeyDesc = `
-This path will generate a new service account and associated API key.
-A role, binding IBM Cloud Access Groups, will be specified
+This path generates API keys, and optionally HMAC keys.
+A role with resource bindings, will be specified
 by name - for example, if this backend is mounted at "ibmcloud", then "ibmcloud/creds/deploy"
 would generate service account, add it to all the access groups listed on the "deploy" role,
 generate an API key for the service account and return the API key.
+If the named role was configured with a list of access groups, rather than
+a service ID, a service ID will created, added as a member to the groups, and an API key generated for
+the service ID.
+If the named role is configured with a Cloud Object Storage instance GUID, a HMAC access key ID and
+secret access key are also generated and returned.
 `
