@@ -6,7 +6,7 @@ const (
 	openIDIssuer                      = "https://iam.cloud.ibm.com/identity"
 )
 
-//Number of minutes to renew the admin token before expiration
+// Number of minutes to renew the admin token before expiration
 const (
 	adminTokenRenewBeforeExpirationMinutes = 5
 	maxGroupsPerRole                       = 10
