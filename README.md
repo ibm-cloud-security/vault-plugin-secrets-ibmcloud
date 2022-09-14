@@ -33,7 +33,7 @@ the plugin executable from source.
     In addition to those permissions, to configure and use secret engine roles with Cloud Object Storage instances, the API key must have the following permissions:
 
     * `Reader` on the Cloud Object Storage service instances used in the secret engine roles
-    * Be assigned one or more IAM access that include the following actions, and have a policies granting these roles to the Cloud Object Storage instances used in the secret engine roles (Note the `Administrator` role includes these actions): 
+    * Be assigned one or more IAM access roles that include the following actions, and have a policy granting these roles on the Cloud Object Storage instances used in the secret engine roles (Note the `Administrator` role includes these actions): 
       * `resource-controller.key.create`
       * `resource-controller.key.delete`
       * `resource-controller.instance.retrieve`
