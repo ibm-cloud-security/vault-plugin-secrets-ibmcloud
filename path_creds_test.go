@@ -119,9 +119,9 @@ func TestStaticServiceIDDeleted(t *testing.T) {
 }
 
 /*
- Tests a successful Get (read) of a credential and validates the returned Secret.
- The internalData parameter is used to pass in key-values that differ between static and dynamic service ID credentials.
- If the ttl and maxTTL values are greater than 0 they will be used to check the Secret's lease.
+Tests a successful Get (read) of a credential and validates the returned Secret.
+The internalData parameter is used to pass in key-values that differ between static and dynamic service ID credentials.
+If the ttl and maxTTL values are greater than 0 they will be used to check the Secret's lease.
 */
 func testSuccessfulGet(t *testing.T, b *ibmCloudSecretBackend, s logical.Storage, internalData map[string]string, ttl, maxTTL int) *logical.Secret {
 	t.Helper()
