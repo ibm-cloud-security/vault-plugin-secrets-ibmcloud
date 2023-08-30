@@ -250,7 +250,7 @@ func TestNoConfig(t *testing.T) {
 		[]string{"no API key was set in the configuration"})
 }
 
-//-- Utils --
+// -- Utils --
 func testRoleCreate(tb testing.TB, b logical.Backend, s logical.Storage, d map[string]interface{}) {
 	tb.Helper()
 
@@ -411,12 +411,12 @@ func testRole(tb testing.TB) string {
 }
 
 /*
-	This function configures the mock iamHelper expectations for the test. It then creates a test Backend with
-	with the mock, and configures it.
+This function configures the mock iamHelper expectations for the test. It then creates a test Backend with
+with the mock, and configures it.
 
-	The minCalls map is used to control the minimum number of times the functions of the iamHelper interface are
-	expected to be called. The keys are the function names (e.g. "ObtainToken", "VerifyAccessGroupExists", etc).
-	If unspecified 0 is used.
+The minCalls map is used to control the minimum number of times the functions of the iamHelper interface are
+expected to be called. The keys are the function names (e.g. "ObtainToken", "VerifyAccessGroupExists", etc).
+If unspecified 0 is used.
 */
 func getMockedBackend(t *testing.T, ctrl *gomock.Controller, minCalls map[string]int) (*ibmCloudSecretBackend, logical.Storage) {
 	t.Helper()

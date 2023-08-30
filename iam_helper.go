@@ -141,7 +141,8 @@ func (h *ibmCloudHelper) getProvider() *oidc.Provider {
 	return provider
 }
 
-/**
+/*
+*
 Obtain an IAM token by way of an API Key
 */
 func (h *ibmCloudHelper) ObtainToken(apiKey string) (string, error) {
@@ -174,7 +175,8 @@ func (h *ibmCloudHelper) ObtainToken(apiKey string) (string, error) {
 	return result["access_token"].(string), nil
 }
 
-/**
+/*
+*
 Verifies an IBM Cloud IAM token. If successful, it will return a tokenInfo
 with relevant items contained in the token.
 */
